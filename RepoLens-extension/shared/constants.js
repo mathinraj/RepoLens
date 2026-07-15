@@ -12,6 +12,10 @@ const REPOLENS = {
     PAGE_INFO: 'REPOLENS_PAGE_INFO',
     OPEN_PANEL: 'REPOLENS_OPEN_PANEL',
     GET_PAGE_INFO: 'REPOLENS_GET_PAGE_INFO',
+    ASK: 'REPOLENS_ASK',
+    ASK_CHUNK: 'REPOLENS_ASK_CHUNK',
+    ASK_DONE: 'REPOLENS_ASK_DONE',
+    ASK_ERROR: 'REPOLENS_ASK_ERROR',
   },
 
   PAGE_TYPES: {
@@ -20,6 +24,11 @@ const REPOLENS = {
     FILE: 'file',
     COMMIT: 'commit',
     UNKNOWN: 'unknown',
+  },
+
+  MODES: {
+    INSTANT: 'instant',
+    ENHANCED: 'enhanced',
   },
 };
 

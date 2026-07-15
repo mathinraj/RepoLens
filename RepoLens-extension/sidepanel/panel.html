@@ -10,21 +10,83 @@
     <header class="header">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true"></span>
-        <h1>RepoLens</h1>
+        <div class="brand-text">
+          <h1>RepoLens</h1>
+          <p id="page-label" class="page-label">Detecting page…</p>
+        </div>
       </div>
-      <span id="page-badge" class="page-badge" data-type="unknown">Detecting…</span>
+      <div class="header-right">
+        <span id="page-badge" class="page-badge" data-type="unknown">…</span>
+        <div class="mode-toggle" role="group" aria-label="Answer mode">
+          <button
+            type="button"
+            class="mode-btn is-active"
+            data-mode="instant"
+            title="Fast answer from this page's context"
+          >
+            Instant
+          </button>
+          <button
+            type="button"
+            class="mode-btn"
+            data-mode="enhanced"
+            title="Deeper answer using broader repo context"
+          >
+            Enhanced
+          </button>
+        </div>
+      </div>
     </header>
 
-    <main class="main">
-      <p id="page-label" class="page-label">Looking at the current GitHub page…</p>
-      <p class="phase-note">
-        Phase 1 is live — page detection and overlay button work.
-        Q&amp;A questions arrive in Phase 2.
+    <section class="questions-section" aria-label="Suggested questions">
+      <div class="section-label">Suggested questions</div>
+      <div id="question-chips" class="question-chips"></div>
+      <p id="questions-empty" class="questions-empty is-hidden">
+        No suggested questions for this page — ask anything below.
       </p>
-      <dl id="page-details" class="page-details"></dl>
-    </main>
+    </section>
+
+    <section class="answer-section" aria-live="polite">
+      <div class="answer-toolbar">
+        <div id="active-question" class="active-question is-hidden"></div>
+        <button
+          type="button"
+          id="enhance-btn"
+          class="enhance-btn is-hidden"
+          title="Re-ask with broader context"
+        >
+          Enhance this answer
+        </button>
+      </div>
+      <div id="answer-area" class="answer-area">
+        <div class="answer-placeholder">
+          Pick a suggested question or type your own to get started.
+        </div>
+      </div>
+    </section>
+
+    <footer class="composer">
+      <form id="ask-form" class="ask-form" autocomplete="off">
+        <textarea
+          id="question-input"
+          class="question-input"
+          rows="2"
+          placeholder="Ask about this page…"
+          maxlength="2000"
+        ></textarea>
+        <button type="submit" id="send-btn" class="send-btn" aria-label="Send question">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M1.22 1.05a.75.75 0 0 1 .8-.12l12.5 5.25a.75.75 0 0 1 0 1.38L2.02 12.8a.75.75 0 0 1-1.02-.9l1.8-4.15L.98 3.7a.75.75 0 0 1 .24-2.65Zm2.5 5.7L2.4 10.1l8.4-3.53-7.08-.82Zm7.08-2.28L2.72 5.56l.9-2.08 7.18 3z"
+            />
+          </svg>
+        </button>
+      </form>
+    </footer>
 
     <script src="../shared/constants.js"></script>
+    <script src="../shared/questions.js"></script>
     <script src="panel.js"></script>
   </body>
 </html>

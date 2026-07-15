@@ -2,51 +2,51 @@
 
 Chrome extension that overlays an AI-powered Q&A panel on `github.intuit.com`. Detects repo, PR, file, and commit pages and answers context-aware questions without leaving GitHub.
 
-> **Status:** Phase 1 complete — page detection + floating overlay button + side panel stub.
+> **Status:** Phase 2 complete — context-aware question chips, free-text ask, Instant/Enhanced mode toggle. Answers are stubbed until Phase 3 backend.
 
 ## Load the extension (unpacked)
 
 1. Open Chrome → `chrome://extensions`
 2. Enable **Developer mode** (top right)
-3. Click **Load unpacked**
+3. Click **Load unpacked** (or **Reload** if already loaded)
 4. Select the `RepoLens-extension/` folder in this repo
 5. Open any page on [github.intuit.com](https://github.intuit.com)
-6. You should see the blue **RepoLens** button (bottom-right)
+6. Click the blue **RepoLens** button (bottom-right)
 
-Click the button to open the side panel and confirm the detected page type (repo / PR / file / commit).
-
-## Phase 1 checklist
+## Phase 2 checklist
 
 | Check | What to verify |
 |---|---|
-| Repo home | Badge shows `REPO`, tooltip shows `org/repo` |
-| PR page | Badge shows `#852` (or PR number), tooltip `PR #852` |
-| File view | Badge shows `FILE`, tooltip `File: <filename>` |
-| Commit view | Badge shows `SHA`, tooltip `Commit <shortsha>` |
-| SPA nav | Navigate within GHE without full reload — badge updates |
-| Side panel | FAB click opens panel with detected page details |
+| PR page | Panel shows PR questions (Summarize, impact/risk, tests, …) |
+| Repo home | Panel shows repo questions (what does it do, tech stack, …) |
+| File / commit | Matching question chips for that page type |
+| Chip click | Skeleton → stub answer with page context |
+| Free-text | Type a question + Enter / Send works |
+| Mode toggle | Instant / Enhanced switch; choice persists |
+| Enhance | After Instant stub, button re-asks in Enhanced mode |
+| Navigation | Chips update when you move between page types |
 
 ## Project layout
 
 ```
 RepoLens-extension/        # Load this folder in Chrome
 ├── manifest.json
-├── content/               # Overlay button + page scrape hook
-├── sidepanel/             # Q&A panel (stub in Phase 1)
-├── background/            # Service worker
-├── shared/                # Page detector + constants
+├── content/               # Overlay button + page detection
+├── sidepanel/             # Q&A panel (Phase 2 UI)
+├── background/            # Service worker (ASK stub)
+├── shared/                # Detector, questions, constants
 └── icons/
 ```
 
-## Dev smoke test
+## Dev smoke tests
 
 ```bash
 node RepoLens-extension/shared/page-detector.test.js
+node RepoLens-extension/shared/questions.test.js
 ```
 
 ## Next up
 
-- **Phase 2** — Question chips + free-text input in the panel
-- **Phase 3** — Local backend + Instant-mode Claude answers
-- **Phase 4** — Enhanced mode
-- **Phase 5** — Prefetch, caching, polish
+- **Phase 3** — Local backend + Instant-mode Claude streaming answers
+- **Phase 4** — Enhanced mode with broader GitHub MCP context
+- **Phase 5** — Prefetch, caching, dynamic questions, polish
