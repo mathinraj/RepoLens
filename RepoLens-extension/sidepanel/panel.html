@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RepoLens</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <h1>RepoLens</h1>
+      </div>
+      <span id="page-badge" class="page-badge" data-type="unknown">Detecting…</span>
+    </header>
+
+    <main class="main">
+      <p id="page-label" class="page-label">Looking at the current GitHub page…</p>
+      <p class="phase-note">
+        Phase 1 is live — page detection and overlay button work.
+        Q&amp;A questions arrive in Phase 2.
+      </p>
+      <dl id="page-details" class="page-details"></dl>
+    </main>
+
+    <script src="../shared/constants.js"></script>
+    <script src="panel.js"></script>
+  </body>
+</html>

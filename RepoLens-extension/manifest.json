@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "RepoLens",
+  "version": "0.1.0",
+  "description": "AI-powered Q&A overlay for github.intuit.com — ask about repos, PRs, files, and commits without leaving the page.",
+  "permissions": ["activeTab", "sidePanel", "storage", "tabs"],
+  "host_permissions": ["https://github.intuit.com/*"],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.intuit.com/*"],
+      "js": ["shared/constants.js", "shared/page-detector.js", "content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel/panel.html"
+  },
+  "action": {
+    "default_title": "Open RepoLens",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}
