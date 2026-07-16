@@ -1,6 +1,5 @@
 /**
- * RepoLens side panel — Phase 2 Q&A UI.
- * Asks are routed through the service worker (stubbed until Phase 3 backend).
+ * RepoLens side panel — Q&A UI with streaming answers (Phase 3).
  */
 (function () {
   const { MSG, PAGE_TYPES, MODES } = globalThis.REPOLENS;
@@ -16,6 +15,7 @@
   const formEl = document.getElementById('ask-form');
   const inputEl = document.getElementById('question-input');
   const sendBtn = document.getElementById('send-btn');
+  const statusEl = document.getElementById('answer-status');
   const modeBtns = document.querySelectorAll('.mode-btn');
 
   /** @type {object|null} */
@@ -28,8 +28,10 @@
   let isAsking = false;
   /** @type {number|null} */
   let activeTabId = null;
-  /** @type {'idle'|'loading'|'answered'|'error'} */
-  let answerState = 'idle';
+  /** @type {string} */
+  let streamedText = '';
+  /** @type {chrome.runtime.Port|null} */
+  let askPort = null;
 
   // —— Mode toggle ——
   function setMode(mode, { persist = true } = {}) {
@@ -81,10 +83,8 @@
     labelEl.textContent = page.label || pageIdentity(page) || 'Current page';
     labelEl.title = pageIdentity(page);
 
-    const chips = getQuestionChips(page.type, page);
-    renderChips(chips);
+    renderChips(getQuestionChips(page.type, page));
 
-    // Reset answer when navigating to a different page context
     if (prevIdentity && prevIdentity !== pageIdentity(page)) {
       resetAnswer();
     }
@@ -123,24 +123,37 @@
   }
 
   // —— Answer UI ——
+  function setStatus(text) {
+    if (!statusEl) return;
+    if (text) {
+      statusEl.textContent = text;
+      statusEl.classList.remove('is-hidden');
+    } else {
+      statusEl.textContent = '';
+      statusEl.classList.add('is-hidden');
+    }
+  }
+
   function resetAnswer() {
-    answerState = 'idle';
     lastQuestion = null;
+    streamedText = '';
     activeQEl.classList.add('is-hidden');
     activeQEl.textContent = '';
     enhanceBtn.classList.add('is-hidden');
+    setStatus('');
     answerEl.innerHTML =
       '<div class="answer-placeholder">Pick a suggested question or type your own to get started.</div>';
     highlightChip(null);
   }
 
   function showSkeleton(question) {
-    answerState = 'loading';
     lastQuestion = question;
+    streamedText = '';
     activeQEl.textContent = question;
     activeQEl.classList.remove('is-hidden');
     enhanceBtn.classList.add('is-hidden');
     highlightChip(question);
+    setStatus('Connecting…');
     answerEl.innerHTML = `
       <div class="skeleton" aria-label="Loading answer">
         <div class="skeleton-line"></div>
@@ -151,29 +164,15 @@
     `;
   }
 
-  function showAnswer(markdown, { mode, stub } = {}) {
-    answerState = 'answered';
-    // Lightweight markdown: paragraphs + inline code + fenced blocks
-    answerEl.innerHTML = `<div class="answer-body">${renderMarkdown(markdown)}</div>`;
-    if (stub) {
-      answerEl.innerHTML +=
-        '<div class="answer-meta">UI flow wired — answers arrive in Phase 3 when the backend is connected.</div>';
+  function renderMarkdown(src) {
+    if (globalThis.marked?.parse) {
+      try {
+        return globalThis.marked.parse(src, { async: false, breaks: true });
+      } catch (err) {
+        console.warn('[RepoLens] marked parse failed:', err);
+      }
     }
-    // Show enhance after an Instant answer
-    if (mode === MODES.INSTANT && !stub) {
-      enhanceBtn.classList.remove('is-hidden');
-    } else if (mode === MODES.INSTANT && stub) {
-      // Still show it so the Phase 4 UX is visible in the panel
-      enhanceBtn.classList.remove('is-hidden');
-    } else {
-      enhanceBtn.classList.add('is-hidden');
-    }
-  }
-
-  function showError(message) {
-    answerState = 'error';
-    answerEl.innerHTML = `<div class="answer-error">${escapeHtml(message)}</div>`;
-    enhanceBtn.classList.add('is-hidden');
+    return fallbackMarkdown(src);
   }
 
   function escapeHtml(value) {
@@ -184,101 +183,152 @@
       .replace(/"/g, '&quot;');
   }
 
-  /**
-   * Minimal markdown renderer for Phase 2 (full marked.js in Phase 3).
-   */
-  function renderMarkdown(src) {
+  function fallbackMarkdown(src) {
     const escaped = escapeHtml(src);
-    // Fenced code blocks
     let html = escaped.replace(/```([\s\S]*?)```/g, (_, code) => {
       return `<pre><code>${code.trim()}</code></pre>`;
     });
-    // Inline code
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Bold / italic
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    // Paragraphs on blank lines
-    html = html
+    return html
       .split(/\n{2,}/)
-      .map((block) => {
-        if (block.startsWith('<pre>')) return block;
-        return `<p>${block.replace(/\n/g, '<br>')}</p>`;
-      })
+      .map((block) =>
+        block.startsWith('<pre>') ? block : `<p>${block.replace(/\n/g, '<br>')}</p>`
+      )
       .join('');
-    return html;
   }
 
-  // —— Ask flow ——
-  async function askQuestion(question, { fromChip = false, forceMode } = {}) {
+  function renderStreamedAnswer() {
+    answerEl.innerHTML = `<div class="answer-body">${renderMarkdown(streamedText || '…')}</div>`;
+    answerEl.scrollTop = answerEl.scrollHeight;
+  }
+
+  function showError(message) {
+    setStatus('');
+    answerEl.innerHTML = `<div class="answer-error">${escapeHtml(message)}</div>`;
+    enhanceBtn.classList.add('is-hidden');
+  }
+
+  function finishAsk(mode, meta) {
+    setStatus('');
+    if (!streamedText.trim()) {
+      showError('Received an empty answer from Claude.');
+      return;
+    }
+    renderStreamedAnswer();
+    if (meta?.model) {
+      const tip = document.createElement('div');
+      tip.className = 'answer-meta';
+      tip.textContent = [
+        meta.model,
+        meta.mode || mode,
+        meta.hasGithubContext === false ? 'page-scrape only' : null,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      answerEl.appendChild(tip);
+    }
+    if (mode === MODES.INSTANT) {
+      enhanceBtn.classList.remove('is-hidden');
+    } else {
+      enhanceBtn.classList.add('is-hidden');
+    }
+  }
+
+  function setAsking(value) {
+    isAsking = value;
+    sendBtn.disabled = value;
+    setChipsDisabled(value);
+  }
+
+  // —— Ask flow (streaming port) ——
+  function askQuestion(question, { fromChip = false, forceMode } = {}) {
     const q = (question || '').trim();
     if (!q || isAsking) return;
 
     const mode = forceMode || currentMode;
-    isAsking = true;
-    sendBtn.disabled = true;
-    setChipsDisabled(true);
+    setAsking(true);
     showSkeleton(q);
 
-    if (!fromChip) {
-      inputEl.value = '';
+    if (!fromChip) inputEl.value = '';
+
+    if (askPort) {
+      try {
+        askPort.disconnect();
+      } catch {
+        // ignore
+      }
+      askPort = null;
     }
 
-    try {
-      const payload = {
-        type: MSG.ASK,
-        question: q,
-        mode,
-        page: currentPage,
-        tabId: activeTabId,
-      };
+    const port = chrome.runtime.connect({ name: 'repolens-ask' });
+    askPort = port;
 
-      const response = await chrome.runtime.sendMessage(payload);
+    port.onMessage.addListener((msg) => {
+      if (!msg || !msg.type) return;
 
-      if (!response?.ok) {
-        showError(response?.error || 'Something went wrong asking that question.');
+      if (msg.type === MSG.ASK_CHUNK) {
+        if (msg.status) {
+          setStatus(msg.status);
+          return;
+        }
+        if (typeof msg.text === 'string') {
+          if (!streamedText) {
+            // First token — swap skeleton for live answer body
+            answerEl.innerHTML = '<div class="answer-body"></div>';
+          }
+          streamedText += msg.text;
+          setStatus('Streaming…');
+          renderStreamedAnswer();
+        }
         return;
       }
 
-      if (response.stub) {
-        showAnswer(response.answer || buildStubAnswer(q, mode), {
-          mode,
-          stub: true,
-        });
+      if (msg.type === MSG.ASK_DONE) {
+        finishAsk(mode, msg.meta);
+        setAsking(false);
+        try {
+          port.disconnect();
+        } catch {
+          // ignore
+        }
+        if (askPort === port) askPort = null;
         return;
       }
 
-      showAnswer(response.answer || '', { mode, stub: false });
-    } catch (err) {
-      console.warn('[RepoLens] Ask failed:', err);
-      showError('Could not reach the RepoLens background worker. Try reloading the extension.');
-    } finally {
-      isAsking = false;
-      sendBtn.disabled = false;
-      setChipsDisabled(false);
-    }
-  }
+      if (msg.type === MSG.ASK_ERROR) {
+        showError(msg.error || 'Ask failed');
+        setAsking(false);
+        try {
+          port.disconnect();
+        } catch {
+          // ignore
+        }
+        if (askPort === port) askPort = null;
+      }
+    });
 
-  function buildStubAnswer(question, mode) {
-    const page = currentPage;
-    const where = page?.label || 'this page';
-    const modeLabel = mode === MODES.ENHANCED ? 'Enhanced' : 'Instant';
-    return [
-      `**${modeLabel} mode** is ready for: _${question}_`,
-      '',
-      `Context locked onto **${where}**.`,
-      page?.org && page?.repo
-        ? `Repo: \`${page.org}/${page.repo}\`${
-            page.prNumber != null ? ` · PR \`#${page.prNumber}\`` : ''
-          }${page.filePath ? ` · File \`${page.filePath}\`` : ''}${
-            page.sha ? ` · Commit \`${String(page.sha).slice(0, 7)}\`` : ''
-          }`
-        : '',
-      '',
-      'The ask pipeline is wired end-to-end. Phase 3 will stream a real Claude answer here using GitHub MCP context.',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    port.onDisconnect.addListener(() => {
+      if (askPort === port) askPort = null;
+      if (isAsking && !streamedText) {
+        const err = chrome.runtime.lastError?.message;
+        showError(err || 'Connection to background worker closed.');
+        setAsking(false);
+      } else if (isAsking && streamedText) {
+        // Stream ended without done event — treat as complete
+        finishAsk(mode, {});
+        setAsking(false);
+      }
+    });
+
+    port.postMessage({
+      type: MSG.ASK,
+      question: q,
+      mode,
+      page: currentPage,
+      tabId: activeTabId,
+    });
   }
 
   formEl.addEventListener('submit', (event) => {
@@ -286,7 +336,6 @@
     askQuestion(inputEl.value, { fromChip: false });
   });
 
-  // Enter to send, Shift+Enter for newline
   inputEl.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -329,6 +378,13 @@
       renderPage(message.page);
     }
   });
+
+  if (globalThis.marked?.setOptions) {
+    globalThis.marked.setOptions({
+      gfm: true,
+      breaks: true,
+    });
+  }
 
   loadPageInfo();
   document.addEventListener('visibilitychange', () => {

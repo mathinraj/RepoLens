@@ -1,10 +1,14 @@
 {
   "manifest_version": 3,
   "name": "RepoLens",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "AI-powered Q&A overlay for github.intuit.com — ask about repos, PRs, files, and commits without leaving the page.",
   "permissions": ["activeTab", "sidePanel", "storage", "tabs"],
-  "host_permissions": ["https://github.intuit.com/*"],
+  "host_permissions": [
+    "https://github.intuit.com/*",
+    "http://localhost:3847/*",
+    "http://127.0.0.1:3847/*"
+  ],
   "background": {
     "service_worker": "background/service-worker.js"
   },

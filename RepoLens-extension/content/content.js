@@ -116,11 +116,83 @@
     });
   }
 
+  /**
+   * Lightweight DOM scrape for Instant-mode fallback / supplement.
+   */
+  function scrapePage() {
+    const page = currentPage || getPageInfo();
+    const scrape = { pageType: page.type, url: location.href };
+
+    try {
+      if (page.type === PAGE_TYPES.PR) {
+        const title =
+          document.querySelector('.js-issue-title')?.textContent?.trim() ||
+          document.querySelector('bdi.js-issue-title')?.textContent?.trim() ||
+          document.title;
+        const body =
+          document.querySelector('.comment-body')?.innerText?.trim() ||
+          document.querySelector('[data-testid="pull-request-body"]')?.innerText?.trim() ||
+          '';
+        scrape.title = title;
+        scrape.body = body.slice(0, 8000);
+        const fileRows = document.querySelectorAll(
+          '.file-info .Truncate-text, .Diff-file-header a, [data-file-type]'
+        );
+        const files = [];
+        fileRows.forEach((el) => {
+          const name = el.textContent?.trim();
+          if (name && files.length < 40 && !files.includes(name)) files.push(name);
+        });
+        if (files.length) scrape.changedFilesHint = files;
+      } else if (page.type === PAGE_TYPES.FILE) {
+        const lines = document.querySelectorAll(
+          '.blob-code-inner, td.blob-code, .react-code-text, [data-code-text]'
+        );
+        let text = '';
+        lines.forEach((el) => {
+          if (text.length > 20_000) return;
+          text += `${el.textContent || ''}\n`;
+        });
+        if (!text) {
+          text = document.querySelector('.blob-wrapper, #read-only-cursor-text-area')
+            ?.textContent || '';
+        }
+        scrape.filePath = page.filePath;
+        scrape.content = text.slice(0, 20_000);
+      } else if (page.type === PAGE_TYPES.REPO) {
+        const readme =
+          document.querySelector('#readme .markdown-body')?.innerText ||
+          document.querySelector('article.markdown-body')?.innerText ||
+          '';
+        scrape.readme = readme.slice(0, 12_000);
+        scrape.description =
+          document.querySelector('p.f4.my-3')?.textContent?.trim() ||
+          document.querySelector('[data-pjax="#repo-content-pjax-container"] p')
+            ?.textContent?.trim() ||
+          '';
+      } else if (page.type === PAGE_TYPES.COMMIT) {
+        scrape.message =
+          document.querySelector('.commit-title, .commit-desc')?.innerText?.trim() ||
+          document.querySelector('.js-details-container .commit-title')?.textContent?.trim() ||
+          '';
+        scrape.message = String(scrape.message).slice(0, 4000);
+      }
+    } catch (err) {
+      scrape.scrapeError = String(err?.message || err);
+    }
+
+    return scrape;
+  }
+
   // Respond when panel/background asks for current page context
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message && message.type === MSG.GET_PAGE_INFO) {
       const page = currentPage || getPageInfo();
       sendResponse({ page });
+      return true;
+    }
+    if (message && message.type === MSG.SCRAPE_PAGE) {
+      sendResponse({ scrape: scrapePage() });
       return true;
     }
     return false;

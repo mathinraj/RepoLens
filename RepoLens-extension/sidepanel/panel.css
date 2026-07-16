@@ -282,8 +282,15 @@ body {
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   min-height: 0;
+}
+
+.answer-status {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .active-question {
@@ -338,6 +345,30 @@ body {
 
 .answer-body p:last-child {
   margin-bottom: 0;
+}
+
+.answer-body ul,
+.answer-body ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.25em;
+}
+
+.answer-body li {
+  margin: 0.2em 0;
+}
+
+.answer-body h1,
+.answer-body h2,
+.answer-body h3 {
+  margin: 0.9em 0 0.4em;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.answer-body h1:first-child,
+.answer-body h2:first-child,
+.answer-body h3:first-child {
+  margin-top: 0;
 }
 
 .answer-body code {

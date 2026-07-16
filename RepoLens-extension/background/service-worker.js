@@ -1,12 +1,20 @@
 /**
  * RepoLens background service worker.
- * Phase 1: panel open + page context cache
- * Phase 2: ASK routing (stub response until Phase 3 backend)
+ * Routes panel open, page context, and ASK → local backend.
  */
 
 importScripts('../shared/constants.js');
 
-const { MSG, MODES } = self.REPOLENS;
+const { MSG, MODES, BACKEND_URL } = self.REPOLENS;
+
+// Prevent unhandled errors from killing the service worker silently
+self.addEventListener('error', (e) => {
+  console.error('[RepoLens SW] Uncaught error:', e.message, e.filename, e.lineno);
+});
+self.addEventListener('unhandledrejection', (e) => {
+  console.error('[RepoLens SW] Unhandled rejection:', e.reason);
+  e.preventDefault();
+});
 
 /** @type {Map<number, object>} tabId → latest page info */
 const pageInfoByTab = new Map();
@@ -68,27 +76,52 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.type === MSG.ASK) {
-    handleAsk(message)
-      .then((result) => sendResponse(result))
-      .catch((err) => {
-        console.warn('[RepoLens] ASK failed:', err);
-        sendResponse({ ok: false, error: String(err?.message || err) });
-      });
-    return true; // async
-  }
-
   return false;
 });
 
 /**
- * Phase 2: validate + acknowledge the ask.
- * Phase 3 will fetch GitHub MCP context and stream Claude here.
+ * Ask channel from the side panel via port.
  */
-async function handleAsk(message) {
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== 'repolens-ask') return;
+
+  console.log('[RepoLens SW] Ask port connected');
+  let aborted = false;
+
+  port.onDisconnect.addListener(() => {
+    console.log('[RepoLens SW] Ask port disconnected');
+    aborted = true;
+  });
+
+  port.onMessage.addListener((message) => {
+    if (!message || message.type !== MSG.ASK) return;
+    console.log('[RepoLens SW] Received ASK:', message.question?.slice(0, 40));
+
+    handleAskMessage(message, port)
+      .then(() => {
+        console.log('[RepoLens SW] ASK handler completed');
+      })
+      .catch((err) => {
+        console.error('[RepoLens SW] ASK handler error:', err);
+        if (!aborted) {
+          try {
+            port.postMessage({
+              type: MSG.ASK_ERROR,
+              error: humanizeBackendError(err),
+            });
+          } catch (postErr) {
+            console.error('[RepoLens SW] Failed to post error:', postErr);
+          }
+        }
+      });
+  });
+});
+
+async function handleAskMessage(message, port) {
   const question = String(message.question || '').trim();
   if (!question) {
-    return { ok: false, error: 'Question is empty.' };
+    port.postMessage({ type: MSG.ASK_ERROR, error: 'Question is empty.' });
+    return;
   }
 
   const mode =
@@ -97,45 +130,99 @@ async function handleAsk(message) {
     message.page ||
     (typeof message.tabId === 'number' ? pageInfoByTab.get(message.tabId) : null);
 
-  if (!page || page.type === 'unknown') {
-    // Still allow free-text on unrecognized pages — Phase 3 can soft-fail
+  let pageScrape = message.pageScrape || null;
+  if (!pageScrape && typeof message.tabId === 'number') {
+    try {
+      pageScrape = await requestPageScrape(message.tabId);
+    } catch (err) {
+      console.warn('[RepoLens SW] Page scrape failed:', err);
+    }
   }
 
-  // Brief delay so the panel skeleton is visible during demos
-  await sleep(350);
+  // Send status update to panel
+  port.postMessage({ type: MSG.ASK_CHUNK, status: 'Asking Claude…' });
 
-  const modeLabel = mode === MODES.ENHANCED ? 'Enhanced' : 'Instant';
-  const where = page?.label || 'this page';
-  const parts = [
-    `**${modeLabel} mode** is ready for: _${question}_`,
-    '',
-    `Context locked onto **${where}**.`,
-  ];
+  console.log('[RepoLens SW] Fetching from backend:', BACKEND_URL);
+  const result = await callBackend({ question, mode, page, pageScrape });
 
-  if (page?.org && page?.repo) {
-    let line = `Repo: \`${page.org}/${page.repo}\``;
-    if (page.prNumber != null) line += ` · PR \`#${page.prNumber}\``;
-    if (page.filePath) line += ` · File \`${page.filePath}\``;
-    if (page.sha) line += ` · Commit \`${String(page.sha).slice(0, 7)}\``;
-    parts.push(line);
+  if (result.error) {
+    port.postMessage({ type: MSG.ASK_ERROR, error: result.error });
+    return;
   }
 
-  parts.push(
-    '',
-    'The ask pipeline is wired end-to-end. Phase 3 will stream a real Claude answer here using GitHub MCP context.'
-  );
+  // Send the full answer as a single chunk, then done
+  if (result.answer) {
+    port.postMessage({ type: MSG.ASK_CHUNK, text: result.answer });
+  }
+  port.postMessage({ type: MSG.ASK_DONE, meta: result.meta || {} });
+}
+
+async function requestPageScrape(tabId) {
+  try {
+    const res = await chrome.tabs.sendMessage(tabId, {
+      type: MSG.SCRAPE_PAGE,
+    });
+    return res?.scrape || null;
+  } catch {
+    return null;
+  }
+}
+
+async function callBackend(payload) {
+  const page = payload.page || {};
+  const body = {
+    pageType: page.type || 'unknown',
+    org: page.org,
+    repo: page.repo,
+    prNumber: page.prNumber,
+    filePath: page.filePath,
+    branch: page.branch,
+    sha: page.sha,
+    question: payload.question,
+    mode: payload.mode,
+    pageScrape: payload.pageScrape,
+    page,
+  };
+
+  console.log('[RepoLens SW] POST /ask');
+
+  let response;
+  try {
+    response = await fetch(`${BACKEND_URL}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    console.error('[RepoLens SW] Fetch failed:', err);
+    throw Object.assign(
+      new Error(
+        `Cannot reach RepoLens backend at ${BACKEND_URL}. Start it with: cd backend && npm start`
+      ),
+      { cause: err }
+    );
+  }
+
+  console.log('[RepoLens SW] Backend response status:', response.status);
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    return { error: data.error || `Backend returned ${response.status}` };
+  }
 
   return {
-    ok: true,
-    stub: true,
-    mode,
-    answer: parts.join('\n'),
-    page,
+    answer: data.answer || '',
+    meta: data.meta || {},
   };
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function humanizeBackendError(err) {
+  const msg = String(err?.message || err);
+  if (/Failed to fetch|NetworkError|Network request failed|fetch/i.test(msg)) {
+    return `Cannot reach RepoLens backend at ${BACKEND_URL}. Start it with: cd backend && npm start`;
+  }
+  return msg;
 }
 
 chrome.tabs.onRemoved.addListener((tabId) => {
