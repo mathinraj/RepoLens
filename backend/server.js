@@ -1,7 +1,8 @@
 /**
  * RepoLens local backend — Express entry point.
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -23,7 +24,7 @@ app.use(express.json({ limit: '2mb' }));
 
 // Request logging
 app.use((req, _res, next) => {
-  if (req.path !== '/health' && req.path !== '/prefetch') {
+  if (req.path !== '/health') {
     console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.path}`);
   }
   next();
