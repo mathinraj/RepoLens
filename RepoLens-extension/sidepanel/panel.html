@@ -4,12 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RepoLens</title>
+    <link rel="icon" href="../icons/search-compass.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="panel.css" />
   </head>
   <body>
     <header class="header">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="56" cy="55" r="34" fill="none" stroke="var(--accent, #38BDF8)" stroke-width="9"/>
+            <path d="m81 80 25 25" stroke="var(--accent, #38BDF8)" stroke-width="12" stroke-linecap="round"/>
+            <path d="M56 26v10M56 74v10M27 55h10M75 55h10" stroke="var(--accent-tick, #2DD4BF)" stroke-width="6" stroke-linecap="round"/>
+            <path d="m50 43-12 12 12 12M62 43l12 12-12 12" fill="none" stroke="var(--fg, #1f2328)" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+        </span>
         <div class="brand-text">
           <h1>RepoLens</h1>
           <p id="page-label" class="page-label">Detecting page…</p>

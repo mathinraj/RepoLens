@@ -39,12 +39,11 @@
         <div class="repolens-tooltip" role="tooltip"></div>
         <button type="button" class="repolens-fab" aria-label="Open RepoLens" title="Open RepoLens">
           <span class="repolens-badge" aria-hidden="true"></span>
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M4 6.5C4 5.12 5.12 4 6.5 4H10v6H4V6.5z" fill="currentColor" opacity="0.9"/>
-            <path d="M14 4h3.5C18.88 4 20 5.12 20 6.5V10h-6V4z" fill="currentColor" opacity="0.75"/>
-            <path d="M4 14h6v6H6.5C5.12 20 4 18.88 4 17.5V14z" fill="currentColor" opacity="0.75"/>
-            <path d="M14 14h6v3.5c0 1.38-1.12 2.5-2.5 2.5H14v-6z" fill="currentColor" opacity="0.9"/>
-            <circle cx="12" cy="12" r="2.25" fill="#ffffff"/>
+          <svg viewBox="6 6 116 116" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="56" cy="55" r="34" fill="none" stroke="#38BDF8" stroke-width="9"/>
+            <path d="m81 80 25 25" stroke="#38BDF8" stroke-width="12" stroke-linecap="round"/>
+            <path d="M56 26v10M56 74v10M27 55h10M75 55h10" stroke="#2DD4BF" stroke-width="6" stroke-linecap="round"/>
+            <path d="m50 43-12 12 12 12M62 43l12 12-12 12" fill="none" stroke="#F8FAFC" stroke-width="7" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
