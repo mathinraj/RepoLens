@@ -16,13 +16,19 @@ const PROMPTS = {
 };
 
 const INSTANT_CONTEXT_CAP = 60_000;
+const ENHANCED_CONTEXT_CAP = 150_000;
 
-function pickSystemPrompt(pageType) {
-  return PROMPTS[pageType] || PROMPTS.unknown;
+function pickSystemPrompt(pageType, mode) {
+  const base = PROMPTS[pageType] || PROMPTS.unknown;
+  if (mode === 'enhanced') {
+    return base + '\n\nYou are in Enhanced mode with broader repository context. Give a thorough, in-depth answer. Reference specific files, code patterns, and cross-cutting concerns when relevant.';
+  }
+  return base;
 }
 
-function formatContextBlock(context, pageScrape) {
+function formatContextBlock(context, pageScrape, mode) {
   const parts = [];
+  const isEnhanced = mode === 'enhanced';
 
   if (context) {
     parts.push('## GitHub context');
@@ -30,7 +36,6 @@ function formatContextBlock(context, pageScrape) {
     parts.push(JSON.stringify(summarizeForPrompt(context), null, 2));
     parts.push('```');
 
-    // Prefer raw text bodies outside JSON for readability / token efficiency
     if (context.readme?.content) {
       parts.push('\n## README\n');
       parts.push(context.readme.content);
@@ -63,6 +68,81 @@ function formatContextBlock(context, pageScrape) {
       parts.push('\n## Commit message\n');
       parts.push(context.message);
     }
+
+    // ─── Enhanced-only sections ──────────────────────────────────
+    if (isEnhanced && context.enhanced) {
+      if (context.fullFileContents?.length) {
+        parts.push('\n## Full content of changed files\n');
+        for (const f of context.fullFileContents) {
+          parts.push(`### ${f.path}\n`);
+          parts.push('```');
+          parts.push(f.content);
+          parts.push('```\n');
+        }
+      }
+
+      if (context.reviewComments?.length) {
+        parts.push('\n## PR review comments\n');
+        for (const c of context.reviewComments) {
+          const loc = c.path ? ` (${c.path}${c.line ? `:${c.line}` : ''})` : '';
+          parts.push(`- **${c.user}**${loc}: ${c.body}`);
+        }
+      }
+
+      if (context.issueComments?.length) {
+        parts.push('\n## PR conversation comments\n');
+        for (const c of context.issueComments) {
+          parts.push(`- **${c.user}**: ${c.body}`);
+        }
+      }
+
+      if (context.linkedIssues?.length) {
+        parts.push('\n## Linked issues\n');
+        for (const issue of context.linkedIssues) {
+          const labels = issue.labels?.length ? ` [${issue.labels.join(', ')}]` : '';
+          parts.push(`### #${issue.number}: ${issue.title}${labels}\n`);
+          if (issue.body) parts.push(issue.body + '\n');
+        }
+      }
+
+      if (context.configFiles?.length) {
+        parts.push('\n## Configuration files\n');
+        for (const f of context.configFiles) {
+          parts.push(`### ${f.path}\n`);
+          parts.push('```');
+          parts.push(f.content);
+          parts.push('```\n');
+        }
+      }
+
+      if (context.codeowners) {
+        parts.push('\n## CODEOWNERS\n');
+        parts.push('```');
+        parts.push(context.codeowners);
+        parts.push('```');
+      }
+
+      if (context.recentPRs?.length) {
+        parts.push('\n## Recent merged PRs\n');
+        for (const pr of context.recentPRs) {
+          parts.push(`- #${pr.number} "${pr.title}" by ${pr.user} (merged ${pr.mergedAt})`);
+        }
+      }
+
+      if (context.importers?.length) {
+        parts.push('\n## Files that reference this file\n');
+        for (const imp of context.importers) {
+          parts.push(`- ${imp.path}`);
+        }
+      }
+
+      if (context.recentCommits?.length) {
+        parts.push('\n## Recent commits touching this file\n');
+        for (const c of context.recentCommits) {
+          parts.push(`- \`${c.sha}\` ${c.message} — ${c.author} (${c.date})`);
+        }
+      }
+    }
   }
 
   if (pageScrape && Object.keys(pageScrape).length) {
@@ -72,9 +152,11 @@ function formatContextBlock(context, pageScrape) {
     parts.push('```');
   }
 
+  const cap = isEnhanced ? ENHANCED_CONTEXT_CAP : INSTANT_CONTEXT_CAP;
   let text = parts.join('\n');
-  if (text.length > INSTANT_CONTEXT_CAP) {
-    text = `${text.slice(0, INSTANT_CONTEXT_CAP)}\n\n…[context truncated for Instant mode]`;
+  if (text.length > cap) {
+    const label = isEnhanced ? 'Enhanced' : 'Instant';
+    text = `${text.slice(0, cap)}\n\n…[context truncated for ${label} mode]`;
   }
   return text;
 }
@@ -84,6 +166,12 @@ function summarizeForPrompt(context) {
   const clone = { ...context };
   delete clone.diff;
   delete clone.content;
+
+  // Enhanced-only bulky fields rendered separately
+  delete clone.fullFileContents;
+  delete clone.configFiles;
+  delete clone.codeowners;
+
   if (clone.readme) {
     clone.readme = { path: clone.readme.path, chars: clone.readme.content?.length || 0 };
   }
@@ -130,8 +218,8 @@ function buildMessages(input) {
     page,
   } = input;
 
-  const system = pickSystemPrompt(pageType);
-  const contextBlock = formatContextBlock(githubContext, pageScrape);
+  const system = pickSystemPrompt(pageType, mode);
+  const contextBlock = formatContextBlock(githubContext, pageScrape, mode);
 
   const pageLine = page
     ? `Page: type=${page.type || pageType}` +

@@ -308,14 +308,17 @@ body {
   font: inherit;
   font-size: 11px;
   font-weight: 650;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .enhance-btn:hover {
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .answer-area {
@@ -408,6 +411,17 @@ body {
   font-size: 11px;
 }
 
+.enhanced-badge {
+  margin-bottom: 10px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 /* Loading skeleton */
 .skeleton {
   display: flex;
@@ -432,6 +446,19 @@ body {
 .skeleton-line:nth-child(2) { width: 78%; }
 .skeleton-line:nth-child(3) { width: 86%; }
 .skeleton-line:nth-child(4) { width: 54%; }
+.skeleton-line:nth-child(5) { width: 88%; }
+.skeleton-line:nth-child(6) { width: 66%; }
+
+.skeleton.is-enhanced .skeleton-line {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 15%, var(--skeleton)) 0%,
+    color-mix(in srgb, var(--accent) 5%, var(--bg)) 50%,
+    color-mix(in srgb, var(--accent) 15%, var(--skeleton)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
 
 @keyframes shimmer {
   0% { background-position: 100% 0; }

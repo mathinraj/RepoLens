@@ -1,5 +1,5 @@
 const express = require('express');
-const { getInstantContext, hasGithubToken } = require('../services/github-mcp');
+const { getInstantContext, getEnhancedContext, hasGithubToken } = require('../services/github-mcp');
 const { buildMessages } = require('../services/context-builder');
 const { streamCompletion, hasClaudeAuth, getProvider, DEFAULT_MODEL } = require('../services/claude');
 
@@ -60,16 +60,22 @@ router.post('/', async (req, res) => {
     let contextError = null;
 
     if (hasGithubToken() && resolvedPage.org && resolvedPage.repo) {
+      const contextPage = {
+        pageType: resolvedType,
+        org: resolvedPage.org,
+        repo: resolvedPage.repo,
+        prNumber: resolvedPage.prNumber ?? prNumber,
+        filePath: resolvedPage.filePath ?? filePath,
+        branch: resolvedPage.branch ?? branch,
+        sha: resolvedPage.sha ?? sha,
+      };
       try {
-        githubContext = await getInstantContext({
-          pageType: resolvedType,
-          org: resolvedPage.org,
-          repo: resolvedPage.repo,
-          prNumber: resolvedPage.prNumber ?? prNumber,
-          filePath: resolvedPage.filePath ?? filePath,
-          branch: resolvedPage.branch ?? branch,
-          sha: resolvedPage.sha ?? sha,
-        });
+        if (resolvedMode === 'enhanced') {
+          console.log('[ASK] Fetching enhanced context…');
+          githubContext = await getEnhancedContext(contextPage);
+        } else {
+          githubContext = await getInstantContext(contextPage);
+        }
       } catch (err) {
         contextError = err.message || String(err);
         console.warn('[RepoLens] GitHub context failed:', contextError);

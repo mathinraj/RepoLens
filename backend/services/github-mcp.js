@@ -278,6 +278,226 @@ async function getCommitContext(org, repo, sha) {
   };
 }
 
+// ─── Enhanced context fetchers (Phase 4) ────────────────────────────────────
+
+const MAX_ENHANCED_FILE_CHARS = 60_000;
+const MAX_ENHANCED_DIFF_CHARS = 80_000;
+
+/**
+ * Enhanced repo context: everything from Instant, PLUS config files,
+ * recent merged PRs, and CODEOWNERS.
+ */
+async function getEnhancedRepoContext(org, repo) {
+  const base = await getRepoContext(org, repo);
+  const branch = base.defaultBranch;
+
+  const configNames = [
+    'Dockerfile',
+    'docker-compose.yml',
+    'docker-compose.yaml',
+    '.github/workflows/ci.yml',
+    '.github/workflows/ci.yaml',
+    '.github/workflows/build.yml',
+    'Jenkinsfile',
+    'application.yml',
+    'application.yaml',
+    'application.properties',
+    'src/main/resources/application.yml',
+    'src/main/resources/application.properties',
+    '.eslintrc.json',
+    'tsconfig.json',
+    'webpack.config.js',
+    'vite.config.ts',
+    'vite.config.js',
+  ];
+
+  const configFetches = configNames.map((name) =>
+    tryGetFile(org, repo, name, branch).catch(() => null)
+  );
+  const configResults = await Promise.all(configFetches);
+  const configFiles = configResults.filter(Boolean);
+
+  const codeowners = await tryGetFile(org, repo, 'CODEOWNERS', branch).catch(() => null) ||
+    await tryGetFile(org, repo, '.github/CODEOWNERS', branch).catch(() => null);
+
+  let recentPRs = [];
+  try {
+    const prs = await ghFetch(
+      `/repos/${org}/${repo}/pulls?state=closed&sort=updated&direction=desc&per_page=5`,
+      { cacheKey: `recent-prs:${org}/${repo}`, ttlMs: TTL_REPO_MS }
+    );
+    recentPRs = prs
+      .filter((pr) => pr.merged_at)
+      .map((pr) => ({
+        number: pr.number,
+        title: pr.title,
+        user: pr.user?.login || '',
+        mergedAt: pr.merged_at,
+        additions: pr.additions,
+        deletions: pr.deletions,
+      }));
+  } catch {
+    // non-critical
+  }
+
+  return {
+    ...base,
+    enhanced: true,
+    configFiles,
+    codeowners: codeowners ? codeowners.content : null,
+    recentPRs,
+  };
+}
+
+/**
+ * Enhanced PR context: everything from Instant, PLUS full content of
+ * changed files, PR review comments, and linked issues.
+ */
+async function getEnhancedPRContext(org, repo, prNumber) {
+  const base = await getPRContext(org, repo, prNumber);
+
+  // Fetch full content of changed files (cap at 15 most-changed)
+  const sortedFiles = [...base.files]
+    .sort((a, b) => (b.additions + b.deletions) - (a.additions + a.deletions))
+    .slice(0, 15);
+
+  const fileFetches = sortedFiles.map((f) =>
+    tryGetFile(org, repo, f.filename, base.head).catch(() => null)
+  );
+  const fileContents = (await Promise.all(fileFetches)).filter(Boolean);
+
+  // PR review comments
+  let reviewComments = [];
+  try {
+    const comments = await ghFetch(
+      `/repos/${org}/${repo}/pulls/${prNumber}/comments?per_page=50`,
+      { cacheKey: `pr-comments:${org}/${repo}#${prNumber}`, ttlMs: TTL_PR_MS }
+    );
+    reviewComments = comments.map((c) => ({
+      user: c.user?.login || '',
+      body: truncate(c.body || '', 1_000),
+      path: c.path || null,
+      line: c.line || c.original_line || null,
+      createdAt: c.created_at,
+    }));
+  } catch {
+    // non-critical
+  }
+
+  // Issue comments on the PR conversation
+  let issueComments = [];
+  try {
+    const comments = await ghFetch(
+      `/repos/${org}/${repo}/issues/${prNumber}/comments?per_page=30`,
+      { cacheKey: `pr-issue-comments:${org}/${repo}#${prNumber}`, ttlMs: TTL_PR_MS }
+    );
+    issueComments = comments.map((c) => ({
+      user: c.user?.login || '',
+      body: truncate(c.body || '', 1_000),
+      createdAt: c.created_at,
+    }));
+  } catch {
+    // non-critical
+  }
+
+  // Parse linked issues from PR description (e.g., "fixes #123", "closes #456")
+  const linkedIssueNumbers = [];
+  const issuePattern = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
+  let match;
+  while ((match = issuePattern.exec(base.body || '')) !== null) {
+    linkedIssueNumbers.push(Number(match[1]));
+  }
+
+  let linkedIssues = [];
+  if (linkedIssueNumbers.length > 0) {
+    const issueFetches = linkedIssueNumbers.slice(0, 5).map((num) =>
+      ghFetch(`/repos/${org}/${repo}/issues/${num}`).catch(() => null)
+    );
+    const issueResults = (await Promise.all(issueFetches)).filter(Boolean);
+    linkedIssues = issueResults.map((issue) => ({
+      number: issue.number,
+      title: issue.title,
+      body: truncate(issue.body || '', 1_500),
+      state: issue.state,
+      labels: (issue.labels || []).map((l) => l.name || l),
+    }));
+  }
+
+  // Re-fetch diff with higher limit for enhanced mode
+  let enhancedDiff = base.diff;
+  if (base.diff?.includes('…[truncated')) {
+    try {
+      const rawDiff = await ghFetch(`/repos/${org}/${repo}/pulls/${prNumber}`, {
+        accept: 'application/vnd.github.v3.diff',
+      });
+      enhancedDiff = truncate(rawDiff, MAX_ENHANCED_DIFF_CHARS);
+    } catch {
+      // keep the instant diff
+    }
+  }
+
+  return {
+    ...base,
+    enhanced: true,
+    diff: enhancedDiff,
+    fullFileContents: fileContents,
+    reviewComments,
+    issueComments,
+    linkedIssues,
+  };
+}
+
+/**
+ * Enhanced file context: file content PLUS importers, recent commits,
+ * and git blame summary.
+ */
+async function getEnhancedFileContext(org, repo, branch, filePath) {
+  const base = await getFileContext(org, repo, branch, filePath);
+
+  // Search for files that import/reference this file
+  const fileName = filePath.split('/').pop().replace(/\.[^.]+$/, '');
+  let importers = [];
+  try {
+    const searchResult = await ghFetch(
+      `/search/code?q=${encodeURIComponent(fileName)}+repo:${org}/${repo}&per_page=10`,
+      { cacheKey: `importers:${org}/${repo}:${fileName}`, ttlMs: TTL_REPO_MS }
+    );
+    importers = (searchResult.items || [])
+      .filter((item) => item.path !== filePath)
+      .map((item) => ({
+        path: item.path,
+        name: item.name,
+      }));
+  } catch {
+    // search API might not be available
+  }
+
+  // Recent commits touching this file
+  let recentCommits = [];
+  try {
+    const commits = await ghFetch(
+      `/repos/${org}/${repo}/commits?path=${encodeURIComponent(filePath)}&per_page=5` +
+        (branch ? `&sha=${encodeURIComponent(branch)}` : ''),
+      { cacheKey: `file-commits:${org}/${repo}:${branch || 'default'}:${filePath}`, ttlMs: TTL_REPO_MS }
+    );
+    recentCommits = commits.map((c) => ({
+      sha: c.sha?.slice(0, 7),
+      message: truncate(c.commit?.message || '', 200),
+      author: c.commit?.author?.name || c.author?.login || '',
+      date: c.commit?.author?.date || '',
+    }));
+  } catch {
+    // non-critical
+  }
+
+  return {
+    ...base,
+    enhanced: true,
+    importers,
+    recentCommits,
+  };
+}
+
 /**
  * Fetch the minimal Instant-mode context for a page type.
  * @param {{ pageType: string, org?: string, repo?: string, prNumber?: number, filePath?: string, branch?: string, sha?: string }} page
@@ -302,6 +522,29 @@ async function getInstantContext(page) {
   }
 }
 
+/**
+ * Fetch broader Enhanced-mode context for a page type.
+ */
+async function getEnhancedContext(page) {
+  const { pageType, org, repo } = page;
+  if (!org || !repo) {
+    return { type: pageType || 'unknown', note: 'Missing org/repo — using page scrape only.' };
+  }
+
+  switch (pageType) {
+    case 'pr':
+      return getEnhancedPRContext(org, repo, page.prNumber);
+    case 'file':
+      return getEnhancedFileContext(org, repo, page.branch, page.filePath);
+    case 'commit':
+      return getCommitContext(org, repo, page.sha);
+    case 'repo':
+      return getEnhancedRepoContext(org, repo);
+    default:
+      return getEnhancedRepoContext(org, repo);
+  }
+}
+
 function hasGithubToken() {
   return Boolean(TOKEN);
 }
@@ -312,6 +555,10 @@ module.exports = {
   getFileContext,
   getCommitContext,
   getInstantContext,
+  getEnhancedRepoContext,
+  getEnhancedPRContext,
+  getEnhancedFileContext,
+  getEnhancedContext,
   hasGithubToken,
   API_BASE,
 };

@@ -146,20 +146,23 @@
     highlightChip(null);
   }
 
-  function showSkeleton(question) {
+  function showSkeleton(question, mode) {
     lastQuestion = question;
     streamedText = '';
     activeQEl.textContent = question;
     activeQEl.classList.remove('is-hidden');
     enhanceBtn.classList.add('is-hidden');
     highlightChip(question);
-    setStatus('Connecting…');
+
+    const isEnhanced = mode === MODES.ENHANCED;
+    setStatus(isEnhanced ? 'Pulling broader context…' : 'Connecting…');
     answerEl.innerHTML = `
-      <div class="skeleton" aria-label="Loading answer">
+      <div class="skeleton${isEnhanced ? ' is-enhanced' : ''}" aria-label="Loading answer">
         <div class="skeleton-line"></div>
         <div class="skeleton-line"></div>
         <div class="skeleton-line"></div>
         <div class="skeleton-line"></div>
+        ${isEnhanced ? '<div class="skeleton-line"></div><div class="skeleton-line"></div>' : ''}
       </div>
     `;
   }
@@ -217,22 +220,29 @@
       return;
     }
     renderStreamedAnswer();
+
+    const modeLabel = meta?.mode || mode;
     if (meta?.model) {
       const tip = document.createElement('div');
       tip.className = 'answer-meta';
       tip.textContent = [
         meta.model,
-        meta.mode || mode,
+        modeLabel === MODES.ENHANCED ? 'enhanced' : 'instant',
         meta.hasGithubContext === false ? 'page-scrape only' : null,
       ]
         .filter(Boolean)
         .join(' · ');
       answerEl.appendChild(tip);
     }
-    if (mode === MODES.INSTANT) {
-      enhanceBtn.classList.remove('is-hidden');
-    } else {
+
+    if (modeLabel === MODES.ENHANCED) {
+      const badge = document.createElement('div');
+      badge.className = 'enhanced-badge';
+      badge.textContent = 'Enhanced answer — deeper context used';
+      answerEl.insertBefore(badge, answerEl.firstChild);
       enhanceBtn.classList.add('is-hidden');
+    } else {
+      enhanceBtn.classList.remove('is-hidden');
     }
   }
 
@@ -249,7 +259,7 @@
 
     const mode = forceMode || currentMode;
     setAsking(true);
-    showSkeleton(q);
+    showSkeleton(q, mode);
 
     if (!fromChip) inputEl.value = '';
 
@@ -275,11 +285,11 @@
         }
         if (typeof msg.text === 'string') {
           if (!streamedText) {
-            // First token — swap skeleton for live answer body
             answerEl.innerHTML = '<div class="answer-body"></div>';
           }
           streamedText += msg.text;
-          setStatus('Streaming…');
+          const streamLabel = mode === MODES.ENHANCED ? 'Streaming enhanced answer…' : 'Streaming…';
+          setStatus(streamLabel);
           renderStreamedAnswer();
         }
         return;
