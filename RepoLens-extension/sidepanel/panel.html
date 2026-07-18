@@ -49,14 +49,24 @@
     <section class="answer-section" aria-live="polite">
       <div class="answer-toolbar">
         <div id="active-question" class="active-question is-hidden"></div>
-        <button
-          type="button"
-          id="enhance-btn"
-          class="enhance-btn is-hidden"
-          title="Re-ask with broader context"
-        >
-          Enhance this answer
-        </button>
+        <div class="toolbar-actions">
+          <button
+            type="button"
+            id="copy-btn"
+            class="copy-btn is-hidden"
+            title="Copy answer to clipboard"
+          >
+            Copy
+          </button>
+          <button
+            type="button"
+            id="enhance-btn"
+            class="enhance-btn is-hidden"
+            title="Re-ask with broader context"
+          >
+            Enhance
+          </button>
+        </div>
       </div>
       <div id="answer-status" class="answer-status is-hidden"></div>
       <div id="answer-area" class="answer-area">

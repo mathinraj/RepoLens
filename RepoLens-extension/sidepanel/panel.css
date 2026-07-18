@@ -13,8 +13,11 @@
   --chip-active: #ddf4ff;
   --chip-active-border: #54aeff;
   --danger: #cf222e;
+  --success: #1a7f37;
   --skeleton: #eaeef2;
   --code-bg: #f6f8fa;
+  --dynamic-border: #bf8700;
+  --dynamic-bg: #fff8c5;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,8 +36,11 @@
     --chip-active: #121d2f;
     --chip-active-border: #1f6feb;
     --danger: #ff7b72;
+    --success: #56d364;
     --skeleton: #21262d;
     --code-bg: #161b22;
+    --dynamic-border: #9a6700;
+    --dynamic-bg: #2a2100;
   }
 }
 
@@ -189,6 +195,7 @@ body {
   padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
 }
 
 .mode-btn:hover {
@@ -235,11 +242,16 @@ body {
   border-radius: 999px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
 }
 
 .question-chip:hover {
   background: var(--chip-hover);
+  transform: translateY(-1px);
+}
+
+.question-chip:active {
+  transform: translateY(0);
 }
 
 .question-chip:focus-visible {
@@ -253,18 +265,36 @@ body {
 }
 
 .question-chip.is-dynamic {
-  border-style: dashed;
+  border-color: var(--dynamic-border);
+  background: var(--dynamic-bg);
+  animation: chip-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.question-chip.is-dynamic:hover {
+  background: color-mix(in srgb, var(--dynamic-bg) 70%, var(--chip-hover));
 }
 
 .question-chip:disabled {
   opacity: 0.55;
   cursor: wait;
+  transform: none;
 }
 
 .questions-empty {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* —— Answer —— */
@@ -286,11 +316,23 @@ body {
   min-height: 0;
 }
 
+.toolbar-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .answer-status {
   margin: 0 0 8px;
   font-size: 11px;
   color: var(--muted);
   font-weight: 600;
+  animation: pulse-status 2s ease-in-out infinite;
+}
+
+@keyframes pulse-status {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .active-question {
@@ -300,7 +342,8 @@ body {
   line-height: 1.35;
 }
 
-.enhance-btn {
+.enhance-btn,
+.copy-btn {
   flex-shrink: 0;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -312,13 +355,40 @@ body {
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
 
-.enhance-btn:hover {
+.enhance-btn:hover,
+.copy-btn:hover {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
   box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.copy-btn.is-copied {
+  border-color: var(--success);
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+}
+
+.retry-btn {
+  display: inline-block;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.retry-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
 .answer-area {
@@ -340,6 +410,12 @@ body {
   font-size: 13px;
   line-height: 1.55;
   word-wrap: break-word;
+  animation: fade-in 0.2s ease both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .answer-body p {
@@ -420,6 +496,7 @@ body {
   color: var(--accent);
   font-size: 11px;
   font-weight: 600;
+  animation: fade-in 0.3s ease both;
 }
 
 /* Loading skeleton */
@@ -491,6 +568,7 @@ body {
   color: var(--fg);
   font: inherit;
   line-height: 1.4;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .question-input:focus {
@@ -515,15 +593,22 @@ body {
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.12s ease, transform 0.1s ease;
 }
 
 .send-btn:hover {
   background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.send-btn:active {
+  transform: translateY(0);
 }
 
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .send-btn:focus-visible {

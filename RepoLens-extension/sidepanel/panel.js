@@ -1,9 +1,9 @@
 /**
- * RepoLens side panel — Q&A UI with streaming answers (Phase 3).
+ * RepoLens side panel — Q&A UI with streaming, caching, and polish (Phase 5).
  */
 (function () {
   const { MSG, PAGE_TYPES, MODES } = globalThis.REPOLENS;
-  const { getQuestionChips } = globalThis.RepoLensQuestions;
+  const { getQuestionChips, STATIC_QUESTIONS } = globalThis.RepoLensQuestions;
 
   const badgeEl = document.getElementById('page-badge');
   const labelEl = document.getElementById('page-label');
@@ -12,6 +12,7 @@
   const answerEl = document.getElementById('answer-area');
   const activeQEl = document.getElementById('active-question');
   const enhanceBtn = document.getElementById('enhance-btn');
+  const copyBtn = document.getElementById('copy-btn');
   const formEl = document.getElementById('ask-form');
   const inputEl = document.getElementById('question-input');
   const sendBtn = document.getElementById('send-btn');
@@ -24,6 +25,8 @@
   let currentMode = MODES.INSTANT;
   /** @type {string|null} */
   let lastQuestion = null;
+  /** @type {string|null} */
+  let lastMode = null;
   /** @type {boolean} */
   let isAsking = false;
   /** @type {number|null} */
@@ -66,9 +69,13 @@
     return page.label || '';
   }
 
-  function renderPage(page) {
+  function renderPage(page, signals) {
     const prevIdentity = pageIdentity(currentPage);
     currentPage = page;
+
+    if (signals && page) {
+      page.signals = { ...(page.signals || {}), ...signals };
+    }
 
     if (!page) {
       badgeEl.textContent = 'Unknown';
@@ -136,10 +143,12 @@
 
   function resetAnswer() {
     lastQuestion = null;
+    lastMode = null;
     streamedText = '';
     activeQEl.classList.add('is-hidden');
     activeQEl.textContent = '';
     enhanceBtn.classList.add('is-hidden');
+    copyBtn.classList.add('is-hidden');
     setStatus('');
     answerEl.innerHTML =
       '<div class="answer-placeholder">Pick a suggested question or type your own to get started.</div>';
@@ -148,10 +157,12 @@
 
   function showSkeleton(question, mode) {
     lastQuestion = question;
+    lastMode = mode;
     streamedText = '';
     activeQEl.textContent = question;
     activeQEl.classList.remove('is-hidden');
     enhanceBtn.classList.add('is-hidden');
+    copyBtn.classList.add('is-hidden');
     highlightChip(question);
 
     const isEnhanced = mode === MODES.ENHANCED;
@@ -207,16 +218,30 @@
     answerEl.scrollTop = answerEl.scrollHeight;
   }
 
-  function showError(message) {
+  function showError(message, retryable = false) {
     setStatus('');
-    answerEl.innerHTML = `<div class="answer-error">${escapeHtml(message)}</div>`;
+    copyBtn.classList.add('is-hidden');
+    let html = `<div class="answer-error">${escapeHtml(message)}</div>`;
+    if (retryable && lastQuestion) {
+      html += `<button type="button" class="retry-btn" id="retry-btn">Retry</button>`;
+    }
+    answerEl.innerHTML = html;
     enhanceBtn.classList.add('is-hidden');
+
+    if (retryable && lastQuestion) {
+      const retryEl = document.getElementById('retry-btn');
+      if (retryEl) {
+        retryEl.addEventListener('click', () => {
+          askQuestion(lastQuestion, { fromChip: true, forceMode: lastMode });
+        });
+      }
+    }
   }
 
   function finishAsk(mode, meta) {
     setStatus('');
     if (!streamedText.trim()) {
-      showError('Received an empty answer from Claude.');
+      showError('Received an empty answer from Claude.', true);
       return;
     }
     renderStreamedAnswer();
@@ -228,6 +253,7 @@
       tip.textContent = [
         meta.model,
         modeLabel === MODES.ENHANCED ? 'enhanced' : 'instant',
+        meta.cached ? 'cached' : null,
         meta.hasGithubContext === false ? 'page-scrape only' : null,
       ]
         .filter(Boolean)
@@ -244,12 +270,21 @@
     } else {
       enhanceBtn.classList.remove('is-hidden');
     }
+
+    // Show copy button
+    copyBtn.classList.remove('is-hidden');
   }
 
   function setAsking(value) {
     isAsking = value;
     sendBtn.disabled = value;
     setChipsDisabled(value);
+  }
+
+  // —— Cacheable check ——
+  function isStaticQuestion(question, pageType) {
+    const statics = STATIC_QUESTIONS[pageType] || [];
+    return statics.includes(question);
   }
 
   // —— Ask flow (streaming port) ——
@@ -308,7 +343,7 @@
       }
 
       if (msg.type === MSG.ASK_ERROR) {
-        showError(msg.error || 'Ask failed');
+        showError(msg.error || 'Ask failed', msg.retryable !== false);
         setAsking(false);
         try {
           port.disconnect();
@@ -323,14 +358,15 @@
       if (askPort === port) askPort = null;
       if (isAsking && !streamedText) {
         const err = chrome.runtime.lastError?.message;
-        showError(err || 'Connection to background worker closed.');
+        showError(err || 'Connection to background worker closed.', true);
         setAsking(false);
       } else if (isAsking && streamedText) {
-        // Stream ended without done event — treat as complete
         finishAsk(mode, {});
         setAsking(false);
       }
     });
+
+    const cacheable = fromChip && isStaticQuestion(q, currentPage?.type);
 
     port.postMessage({
       type: MSG.ASK,
@@ -338,6 +374,7 @@
       mode,
       page: currentPage,
       tabId: activeTabId,
+      cacheable,
     });
   }
 
@@ -359,6 +396,20 @@
     askQuestion(lastQuestion, { fromChip: true, forceMode: MODES.ENHANCED });
   });
 
+  // —— Copy answer ——
+  copyBtn.addEventListener('click', () => {
+    if (!streamedText) return;
+    navigator.clipboard.writeText(streamedText).then(() => {
+      const orig = copyBtn.textContent;
+      copyBtn.textContent = 'Copied!';
+      copyBtn.classList.add('is-copied');
+      setTimeout(() => {
+        copyBtn.textContent = orig;
+        copyBtn.classList.remove('is-copied');
+      }, 1500);
+    }).catch(() => {});
+  });
+
   // —— Page info loading ——
   async function loadPageInfo() {
     try {
@@ -376,7 +427,7 @@
         type: MSG.GET_PAGE_INFO,
         tabId: tab.id,
       });
-      renderPage(response?.page || null);
+      renderPage(response?.page || null, response?.signals || null);
     } catch (err) {
       console.warn('[RepoLens] Could not load page info:', err);
       renderPage(null);
@@ -386,6 +437,11 @@
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.type === MSG.PAGE_INFO && message.page) {
       renderPage(message.page);
+    }
+    // Re-render chips when prefetch signals arrive
+    if (message?.type === MSG.PREFETCH_DONE && message.signals && currentPage) {
+      currentPage.signals = { ...(currentPage.signals || {}), ...message.signals };
+      renderChips(getQuestionChips(currentPage.type, currentPage));
     }
   });
 

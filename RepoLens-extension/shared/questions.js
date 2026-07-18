@@ -1,5 +1,5 @@
 /**
- * Static (and later dynamic) question sets per GitHub page type.
+ * Static + dynamic question sets per GitHub page type (Phase 5).
  */
 (function (root) {
   const TYPES = (root.REPOLENS && root.REPOLENS.PAGE_TYPES) || {
@@ -46,14 +46,70 @@
   }
 
   /**
-   * Phase 5 will analyze context and inject 1–2 dynamic questions.
-   * Stubbed here so the panel API stays stable.
+   * Analyze page signals and generate 1-2 dynamic questions.
    * @param {string} pageType
-   * @param {object} [_context]
+   * @param {object} [context] - page info object with optional signals
    * @returns {string[]}
    */
-  function generateDynamicQuestions(pageType, _context) {
-    return [];
+  function generateDynamicQuestions(pageType, context) {
+    const questions = [];
+    const signals = context?.signals || {};
+
+    if (pageType === TYPES.PR) {
+      const fileCount = signals.changedFiles || 0;
+
+      if (signals.hasMigrations) {
+        questions.push(
+          fileCount > 0
+            ? `This PR touches ${fileCount} files including a migration — what's the migration impact?`
+            : 'This PR includes a database migration — what are the risks?'
+        );
+      }
+
+      if (!signals.hasTests && fileCount > 2) {
+        questions.push('No test files in this PR — what should be tested?');
+      }
+
+      if (fileCount > 10) {
+        questions.push(`This PR changes ${fileCount} files — can you break down the changes by area?`);
+      }
+
+      if (signals.hasConfig) {
+        questions.push('This PR modifies config/infra files — what could break?');
+      }
+
+      if (signals.prTitle && /\b(revert|rollback|hotfix)\b/i.test(signals.prTitle)) {
+        questions.push('This looks like a revert/hotfix — what was the original issue?');
+      }
+
+      if (signals.draft) {
+        questions.push('This is a draft PR — what seems incomplete or in-progress?');
+      }
+    }
+
+    if (pageType === TYPES.FILE) {
+      const ext = signals.extension || context?.filePath?.split('.').pop() || '';
+      if (/^(test|spec)/.test(context?.filePath?.split('/').pop() || '') || /test|spec/i.test(ext)) {
+        questions.push('What does this test cover and are there any gaps?');
+      }
+      if (/\.(yml|yaml|json|toml|properties|xml)$/i.test(context?.filePath || '')) {
+        questions.push('What does this configuration control?');
+      }
+      if (signals.contentLength > 15_000) {
+        questions.push('This is a large file — should it be split up?');
+      }
+    }
+
+    if (pageType === TYPES.REPO) {
+      if (signals.manifestCount > 1) {
+        questions.push('This repo has multiple package manifests — is it a monorepo?');
+      }
+      if (!signals.hasReadme) {
+        questions.push('There is no README — can you summarize what this repo does from the code?');
+      }
+    }
+
+    return questions.slice(0, 2);
   }
 
   /**

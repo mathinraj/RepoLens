@@ -2,13 +2,30 @@ const express = require('express');
 const { getInstantContext, getEnhancedContext, hasGithubToken } = require('../services/github-mcp');
 const { buildMessages } = require('../services/context-builder');
 const { streamCompletion, hasClaudeAuth, getProvider, DEFAULT_MODEL } = require('../services/claude');
+const { cache } = require('../cache/memory-cache');
 
 const router = express.Router();
 
+const ANSWER_CACHE_TTL = 5 * 60 * 1000;
+
+function pageKey(page) {
+  if (!page?.org || !page?.repo) return null;
+  const parts = [page.org, page.repo];
+  if (page.prNumber != null) parts.push(`pr${page.prNumber}`);
+  if (page.filePath) parts.push(page.filePath);
+  if (page.sha) parts.push(page.sha);
+  return parts.join('/');
+}
+
+function answerCacheKey(page, question, mode) {
+  const pk = pageKey(page);
+  if (!pk) return null;
+  return `answer:${pk}:${mode}:${question}`;
+}
+
 /**
  * POST /ask
- * Body: { pageType, org, repo, prNumber?, filePath?, branch?, sha?, question, mode, pageScrape? }
- * Response: JSON with { answer, meta }
+ * Body: { pageType, org, repo, prNumber?, filePath?, branch?, sha?, question, mode, pageScrape?, cacheable? }
  */
 router.post('/', async (req, res) => {
   const {
@@ -23,6 +40,7 @@ router.post('/', async (req, res) => {
     mode = 'instant',
     pageScrape,
     page,
+    cacheable = false,
   } = req.body || {};
 
   const q = String(question || '').trim();
@@ -54,6 +72,17 @@ router.post('/', async (req, res) => {
     sha,
   };
   const resolvedType = resolvedPage.type || pageType;
+
+  // Check answer cache for cacheable (chip) questions
+  const aCacheKey = cacheable ? answerCacheKey(resolvedPage, q, resolvedMode) : null;
+  if (aCacheKey) {
+    const cached = cache.get(aCacheKey);
+    if (cached) {
+      console.log(`[ASK] Answer cache HIT for "${q.slice(0, 40)}"`);
+      res.json(cached);
+      return;
+    }
+  }
 
   try {
     let githubContext = null;
@@ -107,7 +136,7 @@ router.post('/', async (req, res) => {
 
     console.log(`[ASK] Done — ${result.fullText.length} chars`);
 
-    res.json({
+    const response = {
       ok: true,
       answer: result.fullText,
       meta: {
@@ -116,12 +145,26 @@ router.post('/', async (req, res) => {
         provider: result.provider || getProvider(),
         hasGithubContext: Boolean(githubContext),
         contextError,
+        cached: false,
       },
-    });
+    };
+
+    // Cache the answer for chip questions
+    if (aCacheKey) {
+      const cachedResponse = { ...response, meta: { ...response.meta, cached: true } };
+      cache.set(aCacheKey, cachedResponse, ANSWER_CACHE_TTL);
+    }
+
+    res.json(response);
   } catch (err) {
     console.error('[RepoLens] /ask error:', err?.message || err);
-    res.status(err.status || 500).json({
-      error: err.message || 'Ask failed',
+    const status = err.status || 500;
+    const isRateLimit = status === 429 || /rate.limit/i.test(err.message || '');
+    res.status(status).json({
+      error: isRateLimit
+        ? 'Claude is rate-limited. Please wait a moment and try again.'
+        : (err.message || 'Ask failed'),
+      retryable: isRateLimit || status >= 500,
     });
   }
 });

@@ -95,12 +95,44 @@
     }
   }
 
+  function collectPageSignals(page) {
+    const signals = {};
+    try {
+      if (page.type === PAGE_TYPES.PR) {
+        const fileRows = document.querySelectorAll(
+          '.file-info .Truncate-text, .Diff-file-header a, [data-file-type]'
+        );
+        const names = [];
+        fileRows.forEach((el) => {
+          const name = el.textContent?.trim();
+          if (name && names.length < 40 && !names.includes(name)) names.push(name);
+        });
+        signals.changedFiles = names.length || 0;
+        if (names.length) {
+          signals.fileTypes = [...new Set(names.map((n) => n.split('.').pop()))].slice(0, 15);
+          signals.hasMigrations = names.some((n) => /migrat|schema|flyway|liquibase|alembic/i.test(n));
+          signals.hasTests = names.some((n) => /test|spec|__tests__/i.test(n));
+          signals.hasConfig = names.some((n) => /config|\.env|\.yml|\.yaml|Dockerfile/i.test(n));
+        }
+        const titleEl = document.querySelector('.js-issue-title, bdi.js-issue-title');
+        if (titleEl) signals.prTitle = titleEl.textContent.trim().slice(0, 200);
+      } else if (page.type === PAGE_TYPES.FILE) {
+        const ext = page.filePath?.split('.').pop() || '';
+        signals.extension = ext;
+      }
+    } catch {
+      // non-critical
+    }
+    return signals;
+  }
+
   function refresh(force = false) {
     const path = window.location.pathname;
     if (!force && path === lastPath) return;
     lastPath = path;
 
     const page = getPageInfo();
+    page.signals = collectPageSignals(page);
     updateUi(page);
     publishPageInfo(page);
   }
