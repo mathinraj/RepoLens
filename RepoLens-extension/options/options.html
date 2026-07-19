@@ -24,6 +24,33 @@
         </div>
       </header>
 
+      <section class="card status-card">
+        <div class="status-title">Status</div>
+        <ul class="checks" id="checks">
+          <li class="check" data-key="backend">
+            <span class="dot is-pending"></span>
+            <span class="check-label">Backend</span>
+            <span class="check-value" id="chk-backend">Checking…</span>
+          </li>
+          <li class="check" data-key="claude">
+            <span class="dot is-pending"></span>
+            <span class="check-label">Claude auth</span>
+            <span class="check-value" id="chk-claude">—</span>
+          </li>
+          <li class="check" data-key="github">
+            <span class="dot is-pending"></span>
+            <span class="check-label">GitHub token</span>
+            <span class="check-value" id="chk-github">—</span>
+          </li>
+          <li class="check" data-key="model">
+            <span class="dot is-pending"></span>
+            <span class="check-label">Server default model</span>
+            <span class="check-value" id="chk-model">—</span>
+          </li>
+        </ul>
+        <button type="button" id="recheck-btn" class="recheck-btn">Re-check</button>
+      </section>
+
       <section class="card">
         <div class="field">
           <label for="model-select">Preferred model</label>
@@ -53,8 +80,6 @@
         <span id="status" class="status" role="status"></span>
         <button type="button" id="save-btn" class="save-btn">Save preferences</button>
       </footer>
-
-      <p class="backend-note" id="backend-note"></p>
     </main>
 
     <script src="../shared/constants.js"></script>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RepoLens",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "AI-powered Q&A overlay for github.intuit.com — ask about repos, PRs, files, and commits without leaving the page.",
   "permissions": ["activeTab", "sidePanel", "storage", "tabs"],
   "host_permissions": [

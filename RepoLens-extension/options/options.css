@@ -189,11 +189,67 @@ input[type="text"]:focus {
 .save-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
 .save-btn:active { transform: translateY(0); }
 
-.backend-note {
-  margin-top: 16px;
-  font-size: 12px;
+/* Status card */
+.status-card { margin-bottom: 16px; padding: 16px 20px; }
+
+.status-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--muted);
-  text-align: center;
+  margin-bottom: 12px;
 }
 
-.backend-note.is-error { color: var(--danger); }
+.checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.check-label { font-weight: 600; min-width: 150px; }
+.check-value { color: var(--muted); font-size: 12.5px; }
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+
+.dot.is-ok { background: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 20%, transparent); }
+.dot.is-bad { background: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent); }
+.dot.is-warn { background: #bf8700; box-shadow: 0 0 0 3px color-mix(in srgb, #bf8700 20%, transparent); }
+.dot.is-pending { background: var(--muted); animation: dot-pulse 1.2s ease-in-out infinite; }
+
+@keyframes dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.recheck-btn {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.recheck-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}

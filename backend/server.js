@@ -42,13 +42,13 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Curated model choices for the extension's options page.
-// "" = use the server's configured default (CLAUDE_MODEL).
+// Current Claude model lineup (mid-2026). "" is NOT included here — the client
+// renders the "Default" option from the `default` field below to avoid dupes.
 const MODEL_CHOICES = [
-  { id: '', label: 'Default (server setting)' },
-  { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 — fast, balanced' },
-  { id: 'claude-opus-4-1', label: 'Claude Opus 4.1 — most capable' },
-  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 — fastest' },
+  { id: 'claude-fable-5', label: 'Claude Fable 5', note: 'Highest tier — deep judgment' },
+  { id: 'claude-opus-4-8', label: 'Claude Opus 4.8', note: 'Frontier agentic coding' },
+  { id: 'claude-sonnet-5', label: 'Claude Sonnet 5', note: 'Best speed / intelligence balance' },
+  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5', note: 'Fastest, near-frontier' },
 ];
 
 app.get('/models', (_req, res) => {
@@ -56,6 +56,8 @@ app.get('/models', (_req, res) => {
     ok: true,
     default: DEFAULT_MODEL,
     provider: getProvider(),
+    claudeAuth: hasClaudeAuth(),
+    githubToken: hasGithubToken(),
     models: MODEL_CHOICES,
   });
 });
