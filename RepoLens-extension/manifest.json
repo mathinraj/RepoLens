@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RepoLens",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "AI-powered Q&A overlay for github.intuit.com — ask about repos, PRs, files, and commits without leaving the page.",
   "permissions": ["activeTab", "sidePanel", "storage", "tabs"],
   "host_permissions": [
@@ -22,6 +22,10 @@
   ],
   "side_panel": {
     "default_path": "sidepanel/panel.html"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
   },
   "action": {
     "default_title": "Open RepoLens",

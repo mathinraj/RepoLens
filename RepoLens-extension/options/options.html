@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RepoLens — Preferences</title>
+    <link rel="icon" href="../icons/search-compass.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="56" cy="55" r="34" fill="none" stroke="var(--accent, #38BDF8)" stroke-width="9"/>
+            <path d="m81 80 25 25" stroke="var(--accent, #38BDF8)" stroke-width="12" stroke-linecap="round"/>
+            <path d="M56 26v10M56 74v10M27 55h10M75 55h10" stroke="var(--accent-tick, #2DD4BF)" stroke-width="6" stroke-linecap="round"/>
+            <path d="m50 43-12 12 12 12M62 43l12 12-12 12" fill="none" stroke="var(--fg, #1f2328)" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div>
+          <h1>RepoLens Preferences</h1>
+          <p class="sub">Configure the model and background behavior.</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="field">
+          <label for="model-select">Preferred model</label>
+          <p class="hint">Used for both Instant and Enhanced answers.</p>
+          <select id="model-select"></select>
+        </div>
+
+        <div class="field is-hidden" id="custom-wrap">
+          <label for="custom-model">Custom model slug</label>
+          <p class="hint">Advanced — enter an exact model identifier. Invalid slugs will error at request time.</p>
+          <input type="text" id="custom-model" placeholder="e.g. claude-sonnet-4-6" />
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label for="prefetch-toggle">Pre-fetch page context</label>
+            <p class="hint">Warms GitHub context in the background so answers start faster. Disable to reduce background requests.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="prefetch-toggle" />
+            <span class="slider" aria-hidden="true"></span>
+          </label>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <span id="status" class="status" role="status"></span>
+        <button type="button" id="save-btn" class="save-btn">Save preferences</button>
+      </footer>
+
+      <p class="backend-note" id="backend-note"></p>
+    </main>
+
+    <script src="../shared/constants.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

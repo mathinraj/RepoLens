@@ -18,12 +18,23 @@ const PROMPTS = {
 const INSTANT_CONTEXT_CAP = 60_000;
 const ENHANCED_CONTEXT_CAP = 150_000;
 
+const ANTI_PREAMBLE = `
+
+OUTPUT RULES (strict):
+- Answer the question directly. Start with the answer — no preamble, no filler, no sign-off.
+- NEVER narrate your process. Do not write phrases like "Let me...", "I'll look at...", "Let me check/fetch/examine...", "Looking at...", "First, I'll...", "I'm going to...", "Based on my search...".
+- NEVER mention tools, fetching, retrieving, Jira, MCP, or that you are an AI/assistant.
+- You already have ALL needed context in this message. Do NOT attempt to use tools or fetch anything external.
+- If something needed is missing from the provided context, state briefly what is missing in one short clause — do not describe attempts to obtain it.
+- Do not restate the question. Do not add "Let me know if..." style closers.`;
+
 function pickSystemPrompt(pageType, mode) {
   const base = PROMPTS[pageType] || PROMPTS.unknown;
-  if (mode === 'enhanced') {
-    return base + '\n\nYou are in Enhanced mode with broader repository context. Give a thorough, in-depth answer. Reference specific files, code patterns, and cross-cutting concerns when relevant.';
-  }
-  return base;
+  const enhanced =
+    mode === 'enhanced'
+      ? '\n\nYou are in Enhanced mode with broader repository context. Give a thorough, in-depth answer. Reference specific files, code patterns, and cross-cutting concerns when relevant.'
+      : '';
+  return base + enhanced + ANTI_PREAMBLE;
 }
 
 function formatContextBlock(context, pageScrape, mode) {

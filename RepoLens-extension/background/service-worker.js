@@ -24,6 +24,20 @@ const prefetchSignals = new Map();
 /** @type {Set<string>} in-flight prefetch keys to avoid duplicate requests */
 const prefetchInFlight = new Set();
 
+/** User preferences (mirrored from chrome.storage.local) */
+const prefs = { model: '', prefetch: true };
+
+chrome.storage.local.get(['repolensModel', 'repolensPrefetch']).then((s) => {
+  if (typeof s.repolensModel === 'string') prefs.model = s.repolensModel;
+  if (typeof s.repolensPrefetch === 'boolean') prefs.prefetch = s.repolensPrefetch;
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (changes.repolensModel) prefs.model = changes.repolensModel.newValue || '';
+  if (changes.repolensPrefetch) prefs.prefetch = changes.repolensPrefetch.newValue !== false;
+});
+
 // ─── Side panel scoping ─────────────────────────────────────────────────────
 //
 // Chrome's side panel open/close state is per WINDOW, and the manifest's
@@ -134,6 +148,7 @@ let prefetchPausedUntil = 0;
 const PREFETCH_BACKOFF_MS = 30_000;
 
 async function prefetchContext(page) {
+  if (!prefs.prefetch) return; // disabled in preferences
   const key = makePageKey(page);
   if (!key || prefetchInFlight.has(key) || prefetchSignals.has(key)) return;
   if (Date.now() < prefetchPausedUntil) return; // backend recently unreachable
@@ -331,6 +346,7 @@ async function handleAskMessage(message, safeSend) {
     page,
     pageScrape,
     cacheable: Boolean(message.cacheable),
+    model: message.model || prefs.model || undefined,
   });
 
   if (result.error) {
@@ -374,6 +390,7 @@ async function callBackend(payload) {
     pageScrape: payload.pageScrape,
     page,
     cacheable: payload.cacheable || false,
+    model: payload.model || undefined,
   };
 
   console.log('[RepoLens SW] POST /ask');

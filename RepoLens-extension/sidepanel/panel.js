@@ -10,6 +10,9 @@
   const labelEl = document.getElementById('page-label');
   const chipsEl = document.getElementById('question-chips');
   const emptyChipsEl = document.getElementById('questions-empty');
+  const questionsToggle = document.getElementById('questions-toggle');
+  const questionsBody = document.getElementById('questions-body');
+  const settingsBtn = document.getElementById('settings-btn');
   const convoEl = document.getElementById('conversation');
   const convoHeaderEl = document.getElementById('conversation-header');
   const emptyStateEl = document.getElementById('empty-state');
@@ -75,6 +78,44 @@
 
   chrome.storage.local.get(['repolensMode']).then((stored) => {
     if (stored.repolensMode) setMode(stored.repolensMode, { persist: false });
+  });
+
+  // ─── Collapsible suggested questions ─────────────────────────────────────────
+  function setQuestionsCollapsed(collapsed, { persist = true } = {}) {
+    questionsBody.classList.toggle('is-collapsed', collapsed);
+    questionsToggle.setAttribute('aria-expanded', String(!collapsed));
+    questionsToggle.classList.toggle('is-collapsed', collapsed);
+    if (persist) {
+      chrome.storage.local.set({ repolensQuestionsCollapsed: collapsed }).catch(() => {});
+    }
+  }
+
+  questionsToggle.addEventListener('click', () => {
+    setQuestionsCollapsed(!questionsBody.classList.contains('is-collapsed'));
+  });
+
+  chrome.storage.local.get(['repolensQuestionsCollapsed']).then((stored) => {
+    if (stored.repolensQuestionsCollapsed) setQuestionsCollapsed(true, { persist: false });
+  });
+
+  // ─── Settings / preferences ──────────────────────────────────────────────────
+  settingsBtn.addEventListener('click', () => {
+    if (chrome.runtime.openOptionsPage) {
+      chrome.runtime.openOptionsPage();
+    } else {
+      window.open(chrome.runtime.getURL('options/options.html'), '_blank');
+    }
+  });
+
+  // Selected model (kept fresh via storage changes)
+  let selectedModel = '';
+  chrome.storage.local.get(['repolensModel']).then((stored) => {
+    if (typeof stored.repolensModel === 'string') selectedModel = stored.repolensModel;
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.repolensModel) {
+      selectedModel = changes.repolensModel.newValue || '';
+    }
   });
 
   // ─── Page identity ──────────────────────────────────────────────────────────
@@ -472,6 +513,7 @@
       page: currentPage,
       tabId: activeTabId,
       cacheable,
+      model: selectedModel || undefined,
     });
   }
 

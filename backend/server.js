@@ -42,6 +42,24 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Curated model choices for the extension's options page.
+// "" = use the server's configured default (CLAUDE_MODEL).
+const MODEL_CHOICES = [
+  { id: '', label: 'Default (server setting)' },
+  { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 — fast, balanced' },
+  { id: 'claude-opus-4-1', label: 'Claude Opus 4.1 — most capable' },
+  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 — fastest' },
+];
+
+app.get('/models', (_req, res) => {
+  res.json({
+    ok: true,
+    default: DEFAULT_MODEL,
+    provider: getProvider(),
+    models: MODEL_CHOICES,
+  });
+});
+
 app.use('/ask', askRouter);
 
 /**

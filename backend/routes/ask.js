@@ -2,6 +2,7 @@ const express = require('express');
 const { getInstantContext, getEnhancedContext, hasGithubToken } = require('../services/github-mcp');
 const { buildMessages } = require('../services/context-builder');
 const { streamCompletion, hasClaudeAuth, getProvider, DEFAULT_MODEL } = require('../services/claude');
+const { sanitizeAnswer } = require('../services/sanitize');
 const { cache } = require('../cache/memory-cache');
 
 const router = express.Router();
@@ -41,7 +42,10 @@ router.post('/', async (req, res) => {
     pageScrape,
     page,
     cacheable = false,
+    model,
   } = req.body || {};
+
+  const requestedModel = typeof model === 'string' && model.trim() ? model.trim() : undefined;
 
   const q = String(question || '').trim();
   console.log(`[ASK] question="${q.slice(0, 60)}" mode=${mode} page=${pageType} org=${org} repo=${repo}`);
@@ -74,7 +78,9 @@ router.post('/', async (req, res) => {
   const resolvedType = resolvedPage.type || pageType;
 
   // Check answer cache for cacheable (chip) questions
-  const aCacheKey = cacheable ? answerCacheKey(resolvedPage, q, resolvedMode) : null;
+  const aCacheKey = cacheable
+    ? answerCacheKey(resolvedPage, q, `${resolvedMode}:${requestedModel || 'default'}`)
+    : null;
   if (aCacheKey) {
     const cached = cache.get(aCacheKey);
     if (cached) {
@@ -127,18 +133,19 @@ router.post('/', async (req, res) => {
         ? Number(process.env.CLAUDE_MAX_TOKENS_ENHANCED || 4096)
         : Number(process.env.CLAUDE_MAX_TOKENS_INSTANT || 2048);
 
-    console.log('[ASK] Calling Claude…');
+    console.log(`[ASK] Calling Claude…${requestedModel ? ` (model=${requestedModel})` : ''}`);
 
     const result = await streamCompletion(
-      { system, messages, maxTokens },
+      { system, messages, maxTokens, model: requestedModel },
       { onChunk: null }
     );
 
-    console.log(`[ASK] Done — ${result.fullText.length} chars`);
+    const answer = sanitizeAnswer(result.fullText);
+    console.log(`[ASK] Done — ${result.fullText.length} chars (sanitized to ${answer.length})`);
 
     const response = {
       ok: true,
-      answer: result.fullText,
+      answer,
       meta: {
         model: result.model || DEFAULT_MODEL,
         mode: resolvedMode,
