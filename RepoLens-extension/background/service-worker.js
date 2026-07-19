@@ -68,13 +68,54 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
   }).catch(() => {});
 });
 
-// Toolbar icon click — open() called synchronously (no await) to keep the gesture.
-chrome.action.onClicked.addListener((tab) => {
-  if (tab?.id && chrome.sidePanel?.open) {
+// ─── Panel open-state tracking (for toggle) ─────────────────────────────────
+// The panel connects a long-lived port when it loads and tells us its windowId.
+// We use that to know whether the panel is currently open in a given window, so
+// clicking the toolbar icon can toggle it closed.
+
+/** @type {Map<number, chrome.runtime.Port>} windowId → panel port */
+const openPanelPorts = new Map();
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== 'repolens-panel') return;
+  let winId = null;
+  port.onMessage.addListener((msg) => {
+    if (msg?.type === MSG.PANEL_HELLO && typeof msg.windowId === 'number') {
+      winId = msg.windowId;
+      openPanelPorts.set(winId, port);
+    }
+  });
+  port.onDisconnect.addListener(() => {
+    if (winId != null && openPanelPorts.get(winId) === port) {
+      openPanelPorts.delete(winId);
+    }
+  });
+});
+
+function togglePanel(tab) {
+  if (!tab?.id) return;
+  const winId = tab.windowId;
+  const existing = typeof winId === 'number' ? openPanelPorts.get(winId) : null;
+  if (existing) {
+    // Panel is open in this window — ask it to close itself.
+    try {
+      existing.postMessage({ type: MSG.PANEL_CLOSE });
+    } catch {
+      openPanelPorts.delete(winId);
+    }
+    return;
+  }
+  // Panel is closed — open it. Must be synchronous to preserve the user gesture.
+  if (chrome.sidePanel?.open) {
     chrome.sidePanel.open({ tabId: tab.id }).catch((err) => {
       console.warn('[RepoLens SW] sidePanel.open failed (toolbar):', err.message);
     });
   }
+}
+
+// Toolbar icon click — toggles the panel open/closed.
+chrome.action.onClicked.addListener((tab) => {
+  togglePanel(tab);
 });
 
 // ─── Pre-fetch on tab navigation ────────────────────────────────────────────
@@ -211,10 +252,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // onCommand passes the active tab as the 2nd arg — use it so open() stays synchronous.
 chrome.commands?.onCommand?.addListener((command, tab) => {
-  if (command === 'toggle-panel' && tab?.id && chrome.sidePanel?.open) {
-    chrome.sidePanel.open({ tabId: tab.id }).catch((err) => {
-      console.warn('[RepoLens SW] sidePanel.open failed (shortcut):', err.message);
-    });
+  if (command === 'toggle-panel') {
+    togglePanel(tab);
   }
 });
 
@@ -284,9 +323,6 @@ async function handleAskMessage(message, safeSend) {
       console.warn('[RepoLens SW] Page scrape failed:', err);
     }
   }
-
-  const statusLabel = mode === MODES.ENHANCED ? 'Pulling deeper context…' : 'Asking Claude…';
-  if (!safeSend({ type: MSG.ASK_CHUNK, status: statusLabel })) return;
 
   console.log('[RepoLens SW] Fetching from backend:', BACKEND_URL);
   const result = await callBackend({
