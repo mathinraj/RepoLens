@@ -24,11 +24,55 @@ const prefetchSignals = new Map();
 /** @type {Set<string>} in-flight prefetch keys to avoid duplicate requests */
 const prefetchInFlight = new Set();
 
-// Open side panel on toolbar icon click (explicit handler — more reliable than openPanelOnActionClick)
+// ─── Side panel scoping ─────────────────────────────────────────────────────
+//
+// Chrome's side panel open/close state is per WINDOW, and the manifest's
+// `default_path` makes it enabled on every tab by default. We scope VISIBILITY
+// to github.intuit.com by disabling the panel on non-GitHub tabs. GitHub tabs
+// stay enabled (via the manifest default), which is important: it lets us call
+// `open()` SYNCHRONOUSLY inside a user gesture without needing an async
+// setOptions() first (awaiting before open() throws "user gesture" errors).
+
+const PANEL_PATH = 'sidepanel/panel.html';
+const GITHUB_HOST = self.REPOLENS.HOST || 'github.intuit.com';
+
+function isGitHubUrl(url) {
+  try {
+    return new URL(url).hostname === GITHUB_HOST;
+  } catch {
+    return false;
+  }
+}
+
+// Enable the panel on GitHub tabs, disable it everywhere else.
+function applyPanelScope(tabId, url) {
+  if (!chrome.sidePanel?.setOptions || typeof tabId !== 'number') return;
+  if (isGitHubUrl(url)) {
+    chrome.sidePanel.setOptions({ tabId, path: PANEL_PATH, enabled: true }).catch(() => {});
+  } else {
+    chrome.sidePanel.setOptions({ tabId, enabled: false }).catch(() => {});
+  }
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    applyPanelScope(tabId, changeInfo.url);
+  } else if (changeInfo.status === 'complete' && tab?.url) {
+    applyPanelScope(tabId, tab.url);
+  }
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  chrome.tabs.get(tabId).then((tab) => {
+    applyPanelScope(tabId, tab?.url || '');
+  }).catch(() => {});
+});
+
+// Toolbar icon click — open() called synchronously (no await) to keep the gesture.
 chrome.action.onClicked.addListener((tab) => {
   if (tab?.id && chrome.sidePanel?.open) {
     chrome.sidePanel.open({ tabId: tab.id }).catch((err) => {
-      console.warn('[RepoLens SW] sidePanel.open failed for tab', tab.id, err);
+      console.warn('[RepoLens SW] sidePanel.open failed (toolbar):', err.message);
     });
   }
 });
@@ -44,9 +88,14 @@ function makePageKey(page) {
   return parts.join(':');
 }
 
+// Circuit breaker: when the backend is unreachable, back off instead of spamming
+let prefetchPausedUntil = 0;
+const PREFETCH_BACKOFF_MS = 30_000;
+
 async function prefetchContext(page) {
   const key = makePageKey(page);
   if (!key || prefetchInFlight.has(key) || prefetchSignals.has(key)) return;
+  if (Date.now() < prefetchPausedUntil) return; // backend recently unreachable
 
   prefetchInFlight.add(key);
   console.log('[RepoLens SW] Pre-fetching context for', key);
@@ -72,7 +121,9 @@ async function prefetchContext(page) {
       broadcastPrefetchSignals(page, data.signals);
     }
   } catch (err) {
-    console.warn('[RepoLens SW] Pre-fetch failed:', err.message);
+    // Backend unreachable — pause prefetch for a while (does not affect the panel)
+    prefetchPausedUntil = Date.now() + PREFETCH_BACKOFF_MS;
+    console.warn(`[RepoLens SW] Pre-fetch failed (backend down?) — pausing ${PREFETCH_BACKOFF_MS / 1000}s:`, err.message);
   } finally {
     prefetchInFlight.delete(key);
   }
@@ -107,11 +158,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const tabId = sender.tab?.id;
     if (typeof tabId === 'number') {
       pageInfoByTab.set(tabId, message.page);
+      // Open synchronously (no await) — the content-script click gesture is
+      // carried through this message, and the GitHub tab is already enabled.
       chrome.sidePanel
         .open({ tabId })
         .then(() => sendResponse({ ok: true }))
         .catch((err) => {
-          console.warn('[RepoLens] Failed to open side panel:', err);
+          console.warn('[RepoLens SW] sidePanel.open failed (FAB):', err.message);
           sendResponse({ ok: false, error: String(err) });
         });
       return true;
@@ -156,12 +209,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // ─── Keyboard shortcut ──────────────────────────────────────────────────────
 
-chrome.commands?.onCommand?.addListener((command) => {
-  if (command === 'toggle-panel') {
-    chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(([tab]) => {
-      if (tab?.id) {
-        chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
-      }
+// onCommand passes the active tab as the 2nd arg — use it so open() stays synchronous.
+chrome.commands?.onCommand?.addListener((command, tab) => {
+  if (command === 'toggle-panel' && tab?.id && chrome.sidePanel?.open) {
+    chrome.sidePanel.open({ tabId: tab.id }).catch((err) => {
+      console.warn('[RepoLens SW] sidePanel.open failed (shortcut):', err.message);
     });
   }
 });
