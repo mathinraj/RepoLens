@@ -15,6 +15,7 @@
   const verifyBtn = document.getElementById('verify-btn');
   const verifyStatus = document.getElementById('verify-status');
   const modelChecks = document.getElementById('model-checks');
+  const modelSummary = document.getElementById('model-summary');
 
   const CUSTOM_VALUE = '__custom__';
 
@@ -140,6 +141,12 @@
   }
 
   // ─── Verify which models are actually usable ────────────────────────────────
+  const STATUS_META = {
+    ok: { pill: 'Available', icon: '✓' },
+    bad: { pill: 'Unavailable', icon: '✕' },
+    pending: { pill: 'Checking…', icon: '' },
+  };
+
   function renderModelCheckRow(model, state, detail) {
     let li = modelChecks.querySelector(`li[data-id="${model.id}"]`);
     if (!li) {
@@ -147,16 +154,17 @@
       li.className = 'model-check';
       li.dataset.id = model.id;
       li.innerHTML =
-        '<span class="dot"></span><span class="mc-label"></span><span class="mc-detail"></span>';
+        '<span class="mc-icon"></span>' +
+        '<span class="mc-info"><span class="mc-label"></span><span class="mc-detail"></span></span>' +
+        '<span class="mc-pill"></span>';
       modelChecks.appendChild(li);
     }
-    const dot = li.querySelector('.dot');
-    const label = li.querySelector('.mc-label');
-    const det = li.querySelector('.mc-detail');
-    dot.className =
-      'dot ' + (state === 'ok' ? 'is-ok' : state === 'bad' ? 'is-bad' : 'is-pending');
-    label.textContent = model.label || model.id;
-    det.textContent = detail || '';
+    const meta = STATUS_META[state] || STATUS_META.pending;
+    li.className = 'model-check state-' + state;
+    li.querySelector('.mc-icon').textContent = meta.icon;
+    li.querySelector('.mc-label').textContent = model.label || model.id;
+    li.querySelector('.mc-detail').textContent = detail || model.note || model.id;
+    li.querySelector('.mc-pill').textContent = meta.pill;
   }
 
   async function verifyModel(model) {
@@ -169,13 +177,13 @@
       });
       const data = await res.json();
       if (data.ok) {
-        renderModelCheckRow(model, 'ok', `available${data.ms ? ` · ${(data.ms / 1000).toFixed(1)}s` : ''}`);
+        renderModelCheckRow(model, 'ok', `Verified${data.ms ? ` in ${(data.ms / 1000).toFixed(1)}s` : ''}`);
         return true;
       }
-      renderModelCheckRow(model, 'bad', shortError(data.error) || 'unavailable');
+      renderModelCheckRow(model, 'bad', shortError(data.error) || 'Unavailable');
       return false;
     } catch {
-      renderModelCheckRow(model, 'bad', 'backend unreachable');
+      renderModelCheckRow(model, 'bad', 'Backend unreachable');
       return false;
     }
   }
@@ -190,27 +198,39 @@
     return msg.slice(0, 60);
   }
 
+  function setSummary(text, tone) {
+    modelSummary.textContent = text;
+    modelSummary.className = 'model-summary' + (tone ? ` tone-${tone}` : '');
+    modelSummary.classList.toggle('is-hidden', !text);
+  }
+
   async function verifyAllModels() {
     if (!currentModels.length) return;
     verifyBtn.disabled = true;
-    verifyStatus.textContent = 'Testing models…';
+    verifyBtn.classList.add('is-busy');
+    verifyStatus.textContent = '';
     modelChecks.classList.remove('is-hidden');
     modelChecks.innerHTML = '';
+    setSummary(`Testing ${currentModels.length} model${currentModels.length === 1 ? '' : 's'}…`, 'pending');
 
     const available = new Set();
     // Test sequentially — each CLI call is a real request and can be slow.
-    for (const model of currentModels) {
+    for (let i = 0; i < currentModels.length; i += 1) {
       /* eslint-disable no-await-in-loop */
-      const ok = await verifyModel(model);
-      if (ok) available.add(model.id);
+      verifyStatus.textContent = `${i + 1} / ${currentModels.length}`;
+      const ok = await verifyModel(currentModels[i]);
+      if (ok) available.add(currentModels[i].id);
       /* eslint-enable no-await-in-loop */
     }
+    verifyStatus.textContent = '';
 
     const count = available.size;
-    verifyStatus.textContent =
+    setSummary(
       count > 0
-        ? `${count} of ${currentModels.length} available`
-        : 'No listed models available — use Default or a custom slug';
+        ? `${count} of ${currentModels.length} model${currentModels.length === 1 ? '' : 's'} available`
+        : 'No listed models available — use Default or a custom slug',
+      count > 0 ? 'ok' : 'bad'
+    );
 
     // Preserve the user's current selection if still valid.
     const prevSelection = pendingStoredModel;
@@ -220,6 +240,7 @@
     }
 
     verifyBtn.disabled = false;
+    verifyBtn.classList.remove('is-busy');
   }
 
   verifyBtn.addEventListener('click', verifyAllModels);
