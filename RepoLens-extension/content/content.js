@@ -8,6 +8,16 @@
   const ROOT_ID = 'repolens-root';
   let currentPage = null;
   let lastPath = null;
+  let contextInvalid = false;
+
+  function isContextValid() {
+    try {
+      return !contextInvalid && Boolean(chrome.runtime?.id);
+    } catch {
+      contextInvalid = true;
+      return false;
+    }
+  }
 
   function getPageInfo() {
     return detectPage(window.location.pathname);
@@ -126,6 +136,7 @@
   }
 
   function refresh(force = false) {
+    if (!isContextValid()) return;
     const path = window.location.pathname;
     if (!force && path === lastPath) return;
     lastPath = path;
@@ -140,11 +151,16 @@
     event.preventDefault();
     event.stopPropagation();
 
+    if (!isContextValid()) return;
     const page = currentPage || getPageInfo();
-    chrome.runtime.sendMessage({
-      type: MSG.OPEN_PANEL,
-      page,
-    });
+    try {
+      chrome.runtime.sendMessage({
+        type: MSG.OPEN_PANEL,
+        page,
+      });
+    } catch {
+      contextInvalid = true;
+    }
   }
 
   /**

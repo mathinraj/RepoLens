@@ -172,6 +172,17 @@ chrome.runtime.onConnect.addListener((port) => {
   console.log('[RepoLens SW] Ask port connected');
   let aborted = false;
 
+  function safeSend(msg) {
+    if (aborted) return false;
+    try {
+      port.postMessage(msg);
+      return true;
+    } catch {
+      aborted = true;
+      return false;
+    }
+  }
+
   port.onDisconnect.addListener(() => {
     console.log('[RepoLens SW] Ask port disconnected');
     aborted = true;
@@ -181,31 +192,27 @@ chrome.runtime.onConnect.addListener((port) => {
     if (!message || message.type !== MSG.ASK) return;
     console.log('[RepoLens SW] Received ASK:', message.question?.slice(0, 40));
 
-    handleAskMessage(message, port)
+    handleAskMessage(message, safeSend)
       .then(() => {
         console.log('[RepoLens SW] ASK handler completed');
       })
       .catch((err) => {
-        console.error('[RepoLens SW] ASK handler error:', err);
         if (!aborted) {
-          try {
-            port.postMessage({
-              type: MSG.ASK_ERROR,
-              error: humanizeBackendError(err),
-              retryable: true,
-            });
-          } catch (postErr) {
-            console.error('[RepoLens SW] Failed to post error:', postErr);
-          }
+          console.error('[RepoLens SW] ASK handler error:', err);
+          safeSend({
+            type: MSG.ASK_ERROR,
+            error: humanizeBackendError(err),
+            retryable: true,
+          });
         }
       });
   });
 });
 
-async function handleAskMessage(message, port) {
+async function handleAskMessage(message, safeSend) {
   const question = String(message.question || '').trim();
   if (!question) {
-    port.postMessage({ type: MSG.ASK_ERROR, error: 'Question is empty.' });
+    safeSend({ type: MSG.ASK_ERROR, error: 'Question is empty.' });
     return;
   }
 
@@ -225,7 +232,7 @@ async function handleAskMessage(message, port) {
   }
 
   const statusLabel = mode === MODES.ENHANCED ? 'Pulling deeper context…' : 'Asking Claude…';
-  port.postMessage({ type: MSG.ASK_CHUNK, status: statusLabel });
+  if (!safeSend({ type: MSG.ASK_CHUNK, status: statusLabel })) return;
 
   console.log('[RepoLens SW] Fetching from backend:', BACKEND_URL);
   const result = await callBackend({
@@ -237,7 +244,7 @@ async function handleAskMessage(message, port) {
   });
 
   if (result.error) {
-    port.postMessage({
+    safeSend({
       type: MSG.ASK_ERROR,
       error: result.error,
       retryable: result.retryable || false,
@@ -246,9 +253,9 @@ async function handleAskMessage(message, port) {
   }
 
   if (result.answer) {
-    port.postMessage({ type: MSG.ASK_CHUNK, text: result.answer });
+    if (!safeSend({ type: MSG.ASK_CHUNK, text: result.answer })) return;
   }
-  port.postMessage({ type: MSG.ASK_DONE, meta: result.meta || {} });
+  safeSend({ type: MSG.ASK_DONE, meta: result.meta || {} });
 }
 
 async function requestPageScrape(tabId) {
