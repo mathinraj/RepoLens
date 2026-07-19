@@ -118,6 +118,52 @@ input[type="text"]:focus {
 
 .is-hidden { display: none !important; }
 
+/* Verify available models */
+.verify-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.verify-btn {
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  color: var(--accent);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.verify-btn:hover { background: color-mix(in srgb, var(--accent) 15%, var(--bg)); transform: translateY(-1px); }
+.verify-btn:disabled { opacity: 0.55; cursor: wait; transform: none; }
+
+.verify-status { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+
+.model-checks {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.model-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.mc-label { font-weight: 600; min-width: 160px; }
+.mc-detail { color: var(--muted); font-size: 12px; }
+
 /* Toggle switch */
 .switch {
   position: relative;

@@ -12,8 +12,15 @@
   const saveBtn = document.getElementById('save-btn');
   const statusEl = document.getElementById('status');
   const recheckBtn = document.getElementById('recheck-btn');
+  const verifyBtn = document.getElementById('verify-btn');
+  const verifyStatus = document.getElementById('verify-status');
+  const modelChecks = document.getElementById('model-checks');
 
   const CUSTOM_VALUE = '__custom__';
+
+  /** @type {Array<{id,label,note}>} last-known candidate models */
+  let currentModels = [];
+  let currentDefault = '';
 
   // Current Claude lineup (mid-2026) — used if the backend can't be reached.
   const FALLBACK_MODELS = [
@@ -26,7 +33,9 @@
   let knownIds = new Set();
   let pendingStoredModel = null;
 
-  function renderModels(models, defaultModel) {
+  function renderModels(models, defaultModel, availableIds) {
+    currentModels = models;
+    currentDefault = defaultModel;
     modelSelect.innerHTML = '';
     knownIds = new Set();
 
@@ -42,6 +51,8 @@
     // Then each model, skipping the one that equals the default (avoid dupes).
     for (const m of models) {
       if (m.id === defaultModel) continue;
+      // When we have verification results, only include available models.
+      if (availableIds && !availableIds.has(m.id)) continue;
       const opt = document.createElement('option');
       opt.value = m.id;
       opt.textContent = m.note ? `${m.label} — ${m.note}` : m.label;
@@ -127,6 +138,91 @@
     applyStoredSelection(typeof stored.repolensModel === 'string' ? stored.repolensModel : '');
     prefetchToggle.checked = stored.repolensPrefetch !== false; // default ON
   }
+
+  // ─── Verify which models are actually usable ────────────────────────────────
+  function renderModelCheckRow(model, state, detail) {
+    let li = modelChecks.querySelector(`li[data-id="${model.id}"]`);
+    if (!li) {
+      li = document.createElement('li');
+      li.className = 'model-check';
+      li.dataset.id = model.id;
+      li.innerHTML =
+        '<span class="dot"></span><span class="mc-label"></span><span class="mc-detail"></span>';
+      modelChecks.appendChild(li);
+    }
+    const dot = li.querySelector('.dot');
+    const label = li.querySelector('.mc-label');
+    const det = li.querySelector('.mc-detail');
+    dot.className =
+      'dot ' + (state === 'ok' ? 'is-ok' : state === 'bad' ? 'is-bad' : 'is-pending');
+    label.textContent = model.label || model.id;
+    det.textContent = detail || '';
+  }
+
+  async function verifyModel(model) {
+    renderModelCheckRow(model, 'pending', 'Checking…');
+    try {
+      const res = await fetch(`${BACKEND_URL}/models/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: model.id }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        renderModelCheckRow(model, 'ok', `available${data.ms ? ` · ${(data.ms / 1000).toFixed(1)}s` : ''}`);
+        return true;
+      }
+      renderModelCheckRow(model, 'bad', shortError(data.error) || 'unavailable');
+      return false;
+    } catch {
+      renderModelCheckRow(model, 'bad', 'backend unreachable');
+      return false;
+    }
+  }
+
+  function shortError(msg) {
+    if (!msg) return '';
+    if (/not found|unknown model|does not exist|invalid model|not available/i.test(msg)) {
+      return 'not available';
+    }
+    if (/auth|login|unauthorized/i.test(msg)) return 'auth error';
+    if (/rate.limit/i.test(msg)) return 'rate-limited (try again)';
+    return msg.slice(0, 60);
+  }
+
+  async function verifyAllModels() {
+    if (!currentModels.length) return;
+    verifyBtn.disabled = true;
+    verifyStatus.textContent = 'Testing models…';
+    modelChecks.classList.remove('is-hidden');
+    modelChecks.innerHTML = '';
+
+    const available = new Set();
+    // Test sequentially — each CLI call is a real request and can be slow.
+    for (const model of currentModels) {
+      /* eslint-disable no-await-in-loop */
+      const ok = await verifyModel(model);
+      if (ok) available.add(model.id);
+      /* eslint-enable no-await-in-loop */
+    }
+
+    const count = available.size;
+    verifyStatus.textContent =
+      count > 0
+        ? `${count} of ${currentModels.length} available`
+        : 'No listed models available — use Default or a custom slug';
+
+    // Preserve the user's current selection if still valid.
+    const prevSelection = pendingStoredModel;
+    renderModels(currentModels, currentDefault, available);
+    if (prevSelection && (available.has(prevSelection) || prevSelection === '')) {
+      applyStoredSelection(prevSelection);
+    }
+
+    verifyBtn.disabled = false;
+  }
+
+  verifyBtn.addEventListener('click', verifyAllModels);
 
   function flashStatus(text, ok = true) {
     statusEl.textContent = text;

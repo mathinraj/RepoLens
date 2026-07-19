@@ -7,7 +7,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const askRouter = require('./routes/ask');
-const { hasClaudeAuth, getProvider, DEFAULT_MODEL } = require('./services/claude');
+const { hasClaudeAuth, getProvider, DEFAULT_MODEL, streamCompletion } = require('./services/claude');
 const { hasGithubToken, API_BASE, getInstantContext } = require('./services/github-mcp');
 
 const PORT = Number(process.env.PORT || 3847);
@@ -60,6 +60,50 @@ app.get('/models', (_req, res) => {
     githubToken: hasGithubToken(),
     models: MODEL_CHOICES,
   });
+});
+
+/**
+ * POST /models/verify — test whether a specific model is usable in this
+ * environment by making a tiny real completion call.
+ * Body: { model }  →  { ok, model, error?, ms }
+ */
+app.post('/models/verify', async (req, res) => {
+  const model = String(req.body?.model || '').trim();
+  if (!model) {
+    res.status(400).json({ ok: false, error: 'model is required' });
+    return;
+  }
+  if (!hasClaudeAuth()) {
+    res.json({ ok: false, model, error: 'Claude auth not available' });
+    return;
+  }
+
+  const started = Date.now();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
+
+  try {
+    const result = await streamCompletion(
+      {
+        system: 'You are a connectivity probe. Reply with exactly: OK',
+        messages: [{ role: 'user', content: 'Reply with the single word OK.' }],
+        maxTokens: 16,
+        model,
+      },
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    const ok = Boolean(result.fullText && result.fullText.trim());
+    res.json({ ok, model, ms: Date.now() - started });
+  } catch (err) {
+    clearTimeout(timeout);
+    res.json({
+      ok: false,
+      model,
+      error: (err && err.message ? err.message : String(err)).slice(0, 200),
+      ms: Date.now() - started,
+    });
+  }
 });
 
 app.use('/ask', askRouter);

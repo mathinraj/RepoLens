@@ -56,6 +56,11 @@
           <label for="model-select">Preferred model</label>
           <p class="hint">Used for both Instant and Enhanced answers.</p>
           <select id="model-select"></select>
+          <div class="verify-row">
+            <button type="button" id="verify-btn" class="verify-btn">Fetch available models</button>
+            <span id="verify-status" class="verify-status"></span>
+          </div>
+          <ul id="model-checks" class="model-checks is-hidden"></ul>
         </div>
 
         <div class="field is-hidden" id="custom-wrap">
