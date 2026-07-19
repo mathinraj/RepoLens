@@ -355,7 +355,8 @@ body {
 }
 
 .enhance-btn,
-.copy-btn {
+.copy-btn,
+.clear-btn {
   flex-shrink: 0;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -368,6 +369,17 @@ body {
   cursor: pointer;
   white-space: nowrap;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+}
+
+.clear-btn {
+  color: var(--muted);
+}
+
+.clear-btn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
+  box-shadow: none;
 }
 
 .enhance-btn:hover,

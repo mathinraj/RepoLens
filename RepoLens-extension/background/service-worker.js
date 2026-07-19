@@ -24,9 +24,12 @@ const prefetchSignals = new Map();
 /** @type {Set<string>} in-flight prefetch keys to avoid duplicate requests */
 const prefetchInFlight = new Set();
 
-chrome.runtime.onInstalled.addListener(() => {
-  if (chrome.sidePanel?.setPanelBehavior) {
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+// Open side panel on toolbar icon click (explicit handler — more reliable than openPanelOnActionClick)
+chrome.action.onClicked.addListener((tab) => {
+  if (tab?.id && chrome.sidePanel?.open) {
+    chrome.sidePanel.open({ tabId: tab.id }).catch((err) => {
+      console.warn('[RepoLens SW] sidePanel.open failed for tab', tab.id, err);
+    });
   }
 });
 
@@ -92,7 +95,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const tabId = sender.tab?.id;
     if (typeof tabId === 'number') {
       pageInfoByTab.set(tabId, message.page);
-      // Fire-and-forget pre-fetch
       if (message.page?.org && message.page?.repo) {
         prefetchContext(message.page);
       }

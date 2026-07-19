@@ -1,5 +1,5 @@
 /**
- * RepoLens side panel — Q&A UI with streaming, caching, and polish (Phase 5).
+ * RepoLens side panel — Q&A UI with per-tab state, caching, and polish.
  */
 (function () {
   const { MSG, PAGE_TYPES, MODES } = globalThis.REPOLENS;
@@ -13,6 +13,7 @@
   const activeQEl = document.getElementById('active-question');
   const enhanceBtn = document.getElementById('enhance-btn');
   const copyBtn = document.getElementById('copy-btn');
+  const clearBtn = document.getElementById('clear-btn');
   const formEl = document.getElementById('ask-form');
   const inputEl = document.getElementById('question-input');
   const sendBtn = document.getElementById('send-btn');
@@ -35,6 +36,62 @@
   let streamedText = '';
   /** @type {chrome.runtime.Port|null} */
   let askPort = null;
+
+  // ─── Per-tab state cache ──────────────────────────────────────────────────
+  /** @type {Map<number, object>} tabId → saved panel state */
+  const tabStateCache = new Map();
+
+  function saveTabState(tabId) {
+    if (tabId == null) return;
+    if (!lastQuestion && !streamedText) {
+      tabStateCache.delete(tabId);
+      return;
+    }
+    tabStateCache.set(tabId, {
+      page: currentPage,
+      question: lastQuestion,
+      mode: lastMode,
+      answer: streamedText,
+      answerHtml: answerEl.innerHTML,
+      enhanceVisible: !enhanceBtn.classList.contains('is-hidden'),
+      copyVisible: !copyBtn.classList.contains('is-hidden'),
+    });
+  }
+
+  function restoreTabState(tabId) {
+    const state = tabStateCache.get(tabId);
+    if (!state || !state.answer) return false;
+
+    currentPage = state.page;
+    lastQuestion = state.question;
+    lastMode = state.mode;
+    streamedText = state.answer;
+
+    if (state.question) {
+      activeQEl.textContent = state.question;
+      activeQEl.classList.remove('is-hidden');
+      highlightChip(state.question);
+    }
+    answerEl.innerHTML = state.answerHtml;
+    setStatus('');
+
+    if (state.enhanceVisible) {
+      enhanceBtn.classList.remove('is-hidden');
+    } else {
+      enhanceBtn.classList.add('is-hidden');
+    }
+    if (state.copyVisible) {
+      copyBtn.classList.remove('is-hidden');
+    } else {
+      copyBtn.classList.add('is-hidden');
+    }
+    clearBtn.classList.remove('is-hidden');
+    return true;
+  }
+
+  function clearTabState(tabId) {
+    if (tabId != null) tabStateCache.delete(tabId);
+  }
 
   // —— Mode toggle ——
   function setMode(mode, { persist = true } = {}) {
@@ -149,6 +206,7 @@
     activeQEl.textContent = '';
     enhanceBtn.classList.add('is-hidden');
     copyBtn.classList.add('is-hidden');
+    clearBtn.classList.add('is-hidden');
     setStatus('');
     answerEl.innerHTML =
       '<div class="answer-placeholder">Pick a suggested question or type your own to get started.</div>';
@@ -163,6 +221,7 @@
     activeQEl.classList.remove('is-hidden');
     enhanceBtn.classList.add('is-hidden');
     copyBtn.classList.add('is-hidden');
+    clearBtn.classList.add('is-hidden');
     highlightChip(question);
 
     const isEnhanced = mode === MODES.ENHANCED;
@@ -271,8 +330,11 @@
       enhanceBtn.classList.remove('is-hidden');
     }
 
-    // Show copy button
     copyBtn.classList.remove('is-hidden');
+    clearBtn.classList.remove('is-hidden');
+
+    // Save state for this tab
+    saveTabState(activeTabId);
   }
 
   function setAsking(value) {
@@ -410,6 +472,12 @@
     }).catch(() => {});
   });
 
+  // —— Clear button ——
+  clearBtn.addEventListener('click', () => {
+    clearTabState(activeTabId);
+    resetAnswer();
+  });
+
   // —— Page info loading ——
   async function loadPageInfo() {
     try {
@@ -438,7 +506,6 @@
     if (message?.type === MSG.PAGE_INFO && message.page) {
       renderPage(message.page);
     }
-    // Re-render chips when prefetch signals arrive
     if (message?.type === MSG.PREFETCH_DONE && message.signals && currentPage) {
       currentPage.signals = { ...(currentPage.signals || {}), ...message.signals };
       renderChips(getQuestionChips(currentPage.type, currentPage));
@@ -451,6 +518,34 @@
       breaks: true,
     });
   }
+
+  // ─── Tab-scoped: save/restore state on tab switch ─────────────────────────
+  chrome.tabs.onActivated.addListener((activeInfo) => {
+    if (activeInfo.tabId === activeTabId) return;
+
+    // Save outgoing tab's state
+    saveTabState(activeTabId);
+
+    activeTabId = activeInfo.tabId;
+
+    // Try restoring incoming tab's state
+    if (!restoreTabState(activeTabId)) {
+      resetAnswer();
+    }
+    loadPageInfo();
+  });
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (tabId === activeTabId && changeInfo.url) {
+      clearTabState(tabId);
+      resetAnswer();
+      loadPageInfo();
+    }
+  });
+
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    tabStateCache.delete(tabId);
+  });
 
   loadPageInfo();
   document.addEventListener('visibilitychange', () => {
