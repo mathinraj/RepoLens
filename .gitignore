@@ -10,3 +10,6 @@ dist/
 .idea/
 
 plan.md
+
+*.pptx
+*.py

@@ -41,6 +41,10 @@
   let thread = [];
   /** @type {string|null} storage key for the current page */
   let storageKey = null;
+  /** @type {object|null} turn currently awaiting a response */
+  let inFlightTurn = null;
+  /** @type {string|null} storage key of the page where the in-flight ask started */
+  let inFlightPageKey = null;
 
   // ─── Toggle: keep-alive port so the SW can close the panel on toolbar click ──
   try {
@@ -449,6 +453,10 @@
     renderThread();
     setAsking(true);
 
+    inFlightTurn = turn;
+    inFlightPageKey = storageKey;
+    const askPageKey = storageKey;
+
     if (askPort) {
       try { askPort.disconnect(); } catch { /* ignore */ }
       askPort = null;
@@ -467,13 +475,35 @@
         turn.error = extra.error || 'Ask failed';
         turn.retryable = extra.retryable !== false;
       }
-      setAsking(false);
-      if (status === 'done') {
-        saveThread();
-        renderThread(turn.id); // animate this turn
-      } else {
-        renderThread();
+
+      if (inFlightTurn === turn) {
+        inFlightTurn = null;
+        inFlightPageKey = null;
       }
+      setAsking(false);
+
+      const turnInThread = thread.some((t) => t.id === turn.id);
+
+      if (turnInThread) {
+        if (status === 'done') {
+          saveThread();
+          renderThread(turn.id);
+        } else {
+          renderThread();
+        }
+      } else if (askPageKey) {
+        chrome.storage.local.get([askPageKey]).then((stored) => {
+          const origThread = Array.isArray(stored[askPageKey]) ? stored[askPageKey] : [];
+          origThread.push(turn);
+          const trimmed = origThread.slice(-MAX_TURNS);
+          chrome.storage.local.set({ [askPageKey]: trimmed }).catch(() => {});
+          if (storageKey === askPageKey) {
+            thread = trimmed;
+            renderThread(status === 'done' ? turn.id : undefined);
+          }
+        });
+      }
+
       try { port.disconnect(); } catch { /* ignore */ }
       if (askPort === port) askPort = null;
     };
@@ -544,6 +574,12 @@
     renderPage(page, signals);
     if (nextKey !== prevKey) {
       await loadThread(page);
+      if (inFlightTurn && inFlightPageKey === nextKey) {
+        const alreadyPresent = thread.some((t) => t.id === inFlightTurn.id);
+        if (!alreadyPresent) {
+          thread.push(inFlightTurn);
+        }
+      }
       renderThread();
     }
   }
