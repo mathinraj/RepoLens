@@ -174,18 +174,43 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🔭 RepoLens backend listening on http://localhost:${PORT}`);
-  console.log(`   Health:  GET  http://localhost:${PORT}/health`);
-  console.log(`   Ask:     POST http://localhost:${PORT}/ask`);
+  const G = '\x1b[32m';   // green
+  const Y = '\x1b[33m';   // yellow
+  const R = '\x1b[31m';   // red
+  const C = '\x1b[36m';   // cyan
+  const D = '\x1b[2m';    // dim
+  const B = '\x1b[1m';    // bold
+  const X = '\x1b[0m';    // reset
+
+  const ok   = (msg) => `  ${G}✔${X}  ${msg}`;
+  const warn = (msg) => `  ${Y}⚠${X}  ${msg}`;
+  const fail = (msg) => `  ${R}✘${X}  ${msg}`;
+
   const provider = getProvider();
-  console.log(
-    `   Claude:  provider=${provider}` +
-      (provider === 'cli'
-        ? ' (Claude Code CLI — run `claude auth login` if needed)'
-        : hasClaudeAuth()
-          ? ' (API key loaded)'
-          : ' (MISSING ANTHROPIC_API_KEY)')
-  );
-  console.log(`   GitHub:  ${hasGithubToken() ? `token loaded (${API_BASE})` : 'MISSING GITHUB_TOKEN'}`);
-  console.log(`   Model:   ${DEFAULT_MODEL}\n`);
+  const claudeOk = hasClaudeAuth();
+  const githubOk = hasGithubToken();
+
+  const claudeLabel = provider === 'cli'
+    ? `Claude CLI ${D}(enterprise)${X}`
+    : `Claude API`;
+  const claudeStatus = claudeOk
+    ? ok(claudeLabel)
+    : fail(`${claudeLabel} ${R}— not configured${X}`);
+
+  const githubStatus = githubOk
+    ? ok(`GitHub ${D}(${API_BASE})${X}`)
+    : warn(`GitHub ${Y}— GITHUB_TOKEN missing${X}`);
+
+  const modelStatus = ok(`Model ${D}${DEFAULT_MODEL}${X}`);
+
+  console.log('');
+  console.log(`  ${B}🔭 RepoLens${X}  ${G}ready${X}  ${D}http://localhost:${PORT}${X}`);
+  console.log(`  ${D}─────────────────────────────────────────${X}`);
+  console.log(claudeStatus);
+  console.log(githubStatus);
+  console.log(modelStatus);
+  console.log(`  ${D}─────────────────────────────────────────${X}`);
+  console.log(`  ${C}→${X}  ${D}GET ${X} /health`);
+  console.log(`  ${C}→${X}  ${D}POST${X} /ask`);
+  console.log('');
 });
