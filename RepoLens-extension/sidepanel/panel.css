@@ -219,7 +219,7 @@ body {
   font: inherit;
   font-size: 11px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;
   transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
@@ -231,6 +231,44 @@ body {
   background: var(--surface-raised);
   color: var(--fg);
   box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
+}
+
+.mode-btn.is-active[data-mode="deep"] {
+  color: var(--accent);
+}
+
+/* Mode tooltip */
+.mode-toggle {
+  position: relative;
+}
+
+.mode-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 230px;
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: pre-line;
+  color: var(--fg);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 50;
+}
+
+.mode-tip-warn {
+  display: block;
+  margin-top: 4px;
+  color: var(--danger);
+  font-weight: 600;
 }
 
 /* —— Questions —— */

@@ -183,7 +183,7 @@ async function getPRContext(org, repo, prNumber) {
   if (cached) return cached;
 
   const pr = await ghFetch(`/repos/${org}/${repo}/pulls/${prNumber}`);
-  const files = await ghFetch(`/repos/${org}/${repo}/pulls/${prNumber}/files?per_page=100`);
+  const files = await ghFetch(`/repos/${org}/${repo}/pulls/${prNumber}/files?per_page=300`);
   let diff = '';
   try {
     diff = await ghFetch(`/repos/${org}/${repo}/pulls/${prNumber}`, {
@@ -281,7 +281,7 @@ async function getCommitContext(org, repo, sha) {
 // ─── Enhanced context fetchers (Phase 4) ────────────────────────────────────
 
 const MAX_ENHANCED_FILE_CHARS = 60_000;
-const MAX_ENHANCED_DIFF_CHARS = 80_000;
+const MAX_ENHANCED_DIFF_CHARS = 120_000;
 
 /**
  * Enhanced repo context: everything from Instant, PLUS config files,
@@ -356,10 +356,8 @@ async function getEnhancedRepoContext(org, repo) {
 async function getEnhancedPRContext(org, repo, prNumber) {
   const base = await getPRContext(org, repo, prNumber);
 
-  // Fetch full content of changed files (cap at 15 most-changed)
   const sortedFiles = [...base.files]
-    .sort((a, b) => (b.additions + b.deletions) - (a.additions + a.deletions))
-    .slice(0, 15);
+    .sort((a, b) => (b.additions + b.deletions) - (a.additions + a.deletions));
 
   const fileFetches = sortedFiles.map((f) =>
     tryGetFile(org, repo, f.filename, base.head).catch(() => null)
@@ -545,6 +543,41 @@ async function getEnhancedContext(page) {
   }
 }
 
+/**
+ * Deep context: Enhanced PR context merged with Enhanced Repo context.
+ * For non-PR pages, falls back to enhanced context.
+ */
+async function getDeepContext(page) {
+  const { pageType, org, repo } = page;
+  if (!org || !repo) {
+    return { type: pageType || 'unknown', note: 'Missing org/repo — using page scrape only.' };
+  }
+
+  if (pageType === 'pr') {
+    const [prCtx, repoCtx] = await Promise.all([
+      getEnhancedPRContext(org, repo, page.prNumber),
+      getEnhancedRepoContext(org, repo),
+    ]);
+    return {
+      ...prCtx,
+      deep: true,
+      repoContext: {
+        description: repoCtx.description,
+        language: repoCtx.language,
+        topics: repoCtx.topics,
+        listing: repoCtx.listing,
+        readme: repoCtx.readme,
+        manifests: repoCtx.manifests,
+        configFiles: repoCtx.configFiles,
+        codeowners: repoCtx.codeowners,
+        recentPRs: repoCtx.recentPRs,
+      },
+    };
+  }
+
+  return getEnhancedContext(page);
+}
+
 function hasGithubToken() {
   return Boolean(TOKEN);
 }
@@ -559,6 +592,7 @@ module.exports = {
   getEnhancedPRContext,
   getEnhancedFileContext,
   getEnhancedContext,
+  getDeepContext,
   hasGithubToken,
   API_BASE,
 };

@@ -16,7 +16,8 @@ const PROMPTS = {
 };
 
 const INSTANT_CONTEXT_CAP = 60_000;
-const ENHANCED_CONTEXT_CAP = 150_000;
+const ENHANCED_CONTEXT_CAP = 200_000;
+const DEEP_CONTEXT_CAP = 300_000;
 
 const ANTI_PREAMBLE = `
 
@@ -30,16 +31,19 @@ OUTPUT RULES (strict):
 
 function pickSystemPrompt(pageType, mode) {
   const base = PROMPTS[pageType] || PROMPTS.unknown;
-  const enhanced =
-    mode === 'enhanced'
-      ? '\n\nYou are in Enhanced mode with broader repository context. Give a thorough, in-depth answer. Reference specific files, code patterns, and cross-cutting concerns when relevant.'
-      : '';
-  return base + enhanced + ANTI_PREAMBLE;
+  let modeHint = '';
+  if (mode === 'deep') {
+    modeHint = '\n\nYou are in Deep Context mode with the FULL repository context alongside the PR/page context. Give the most thorough, comprehensive answer possible. Cross-reference between the PR changes and repo structure, README, configs, manifests, and CODEOWNERS. Identify architectural implications, patterns, and potential impacts across the codebase.';
+  } else if (mode === 'enhanced') {
+    modeHint = '\n\nYou are in Enhanced mode with broader repository context. Give a thorough, in-depth answer. Reference specific files, code patterns, and cross-cutting concerns when relevant.';
+  }
+  return base + modeHint + ANTI_PREAMBLE;
 }
 
 function formatContextBlock(context, pageScrape, mode) {
   const parts = [];
-  const isEnhanced = mode === 'enhanced';
+  const isDeep = mode === 'deep';
+  const isEnhanced = mode === 'enhanced' || isDeep;
 
   if (context) {
     parts.push('## GitHub context');
@@ -154,6 +158,68 @@ function formatContextBlock(context, pageScrape, mode) {
         }
       }
     }
+
+    // ─── Deep-only: merged repo context alongside PR context ─────
+    if (isDeep && context.deep && context.repoContext) {
+      const rc = context.repoContext;
+      parts.push('\n# Repository context\n');
+
+      if (rc.description) {
+        parts.push(`**Description:** ${rc.description}\n`);
+      }
+      if (rc.language) {
+        parts.push(`**Primary language:** ${rc.language}`);
+      }
+      if (rc.topics?.length) {
+        parts.push(`**Topics:** ${rc.topics.join(', ')}\n`);
+      }
+
+      if (rc.listing?.length) {
+        parts.push('\n## Repository file tree\n');
+        for (const item of rc.listing) {
+          const icon = item.type === 'dir' ? '📁' : '📄';
+          parts.push(`- ${icon} ${item.path}`);
+        }
+      }
+
+      if (rc.readme?.content) {
+        parts.push('\n## Repository README\n');
+        parts.push(rc.readme.content);
+      }
+
+      if (rc.manifests?.length) {
+        for (const m of rc.manifests) {
+          parts.push(`\n## Repo manifest: ${m.path}\n`);
+          parts.push('```');
+          parts.push(m.content);
+          parts.push('```');
+        }
+      }
+
+      if (rc.configFiles?.length) {
+        parts.push('\n## Repo configuration files\n');
+        for (const f of rc.configFiles) {
+          parts.push(`### ${f.path}\n`);
+          parts.push('```');
+          parts.push(f.content);
+          parts.push('```\n');
+        }
+      }
+
+      if (rc.codeowners) {
+        parts.push('\n## Repo CODEOWNERS\n');
+        parts.push('```');
+        parts.push(rc.codeowners);
+        parts.push('```');
+      }
+
+      if (rc.recentPRs?.length) {
+        parts.push('\n## Recent merged PRs in repo\n');
+        for (const pr of rc.recentPRs) {
+          parts.push(`- #${pr.number} "${pr.title}" by ${pr.user} (merged ${pr.mergedAt})`);
+        }
+      }
+    }
   }
 
   if (pageScrape && Object.keys(pageScrape).length) {
@@ -163,10 +229,10 @@ function formatContextBlock(context, pageScrape, mode) {
     parts.push('```');
   }
 
-  const cap = isEnhanced ? ENHANCED_CONTEXT_CAP : INSTANT_CONTEXT_CAP;
+  const cap = isDeep ? DEEP_CONTEXT_CAP : isEnhanced ? ENHANCED_CONTEXT_CAP : INSTANT_CONTEXT_CAP;
+  const label = isDeep ? 'Deep' : isEnhanced ? 'Enhanced' : 'Instant';
   let text = parts.join('\n');
   if (text.length > cap) {
-    const label = isEnhanced ? 'Enhanced' : 'Instant';
     text = `${text.slice(0, cap)}\n\n…[context truncated for ${label} mode]`;
   }
   return text;
@@ -178,10 +244,10 @@ function summarizeForPrompt(context) {
   delete clone.diff;
   delete clone.content;
 
-  // Enhanced-only bulky fields rendered separately
   delete clone.fullFileContents;
   delete clone.configFiles;
   delete clone.codeowners;
+  delete clone.repoContext;
 
   if (clone.readme) {
     clone.readme = { path: clone.readme.path, chars: clone.readme.content?.length || 0 };
@@ -213,7 +279,7 @@ function truncate(text, max) {
  * @param {{
  *   pageType: string,
  *   question: string,
- *   mode: 'instant'|'enhanced',
+ *   mode: 'instant'|'enhanced'|'deep',
  *   githubContext: object|null,
  *   pageScrape?: object|null,
  *   page?: object|null
