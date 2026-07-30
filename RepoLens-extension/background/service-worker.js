@@ -40,15 +40,21 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // ─── Side panel scoping ─────────────────────────────────────────────────────
 //
-// Chrome's side panel open/close state is per WINDOW, and the manifest's
-// `default_path` makes it enabled on every tab by default. We scope VISIBILITY
-// to github.intuit.com by disabling the panel on non-GitHub tabs. GitHub tabs
-// stay enabled (via the manifest default), which is important: it lets us call
-// `open()` SYNCHRONOUSLY inside a user gesture without needing an async
-// setOptions() first (awaiting before open() throws "user gesture" errors).
+// The panel is only enabled for tabs where the user EXPLICITLY opened it
+// (via FAB, toolbar icon, or keyboard shortcut). Switching to any other tab
+// auto-hides the panel. Switching back to a tracked tab re-opens it.
 
 const PANEL_PATH = 'sidepanel/panel.html';
 const GITHUB_HOST = self.REPOLENS.HOST || 'github.intuit.com';
+
+/** @type {Set<number>} tabIds where the user explicitly opened the panel */
+const panelEnabledTabs = new Set();
+
+// No default_path in manifest — panel starts disabled globally.
+// We only enable it per-tab when the user explicitly opens it.
+if (chrome.sidePanel?.setOptions) {
+  chrome.sidePanel.setOptions({ enabled: false }).catch(() => {});
+}
 
 function isGitHubUrl(url) {
   try {
@@ -58,28 +64,47 @@ function isGitHubUrl(url) {
   }
 }
 
-// Enable the panel on GitHub tabs, disable it everywhere else.
-function applyPanelScope(tabId, url) {
-  if (!chrome.sidePanel?.setOptions || typeof tabId !== 'number') return;
-  if (isGitHubUrl(url)) {
+function enablePanelForTab(tabId) {
+  panelEnabledTabs.add(tabId);
+  if (chrome.sidePanel?.setOptions) {
     chrome.sidePanel.setOptions({ tabId, path: PANEL_PATH, enabled: true }).catch(() => {});
-  } else {
+  }
+}
+
+function disablePanelForTab(tabId) {
+  panelEnabledTabs.delete(tabId);
+  if (chrome.sidePanel?.setOptions) {
     chrome.sidePanel.setOptions({ tabId, enabled: false }).catch(() => {});
   }
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url) {
-    applyPanelScope(tabId, changeInfo.url);
-  } else if (changeInfo.status === 'complete' && tab?.url) {
-    applyPanelScope(tabId, tab.url);
+  if (panelEnabledTabs.has(tabId)) {
+    const url = changeInfo.url || (changeInfo.status === 'complete' ? tab?.url : null);
+    if (url && !isGitHubUrl(url)) {
+      disablePanelForTab(tabId);
+    }
+    return;
+  }
+  // Not a tracked tab — ensure it stays disabled (overrides manifest default).
+  if (changeInfo.status === 'loading') {
+    disablePanelForTab(tabId);
   }
 });
 
 chrome.tabs.onActivated.addListener(({ tabId }) => {
-  chrome.tabs.get(tabId).then((tab) => {
-    applyPanelScope(tabId, tab?.url || '');
-  }).catch(() => {});
+  if (panelEnabledTabs.has(tabId)) {
+    // Re-open panel for this tracked tab (allowed without gesture since
+    // the user previously opened the panel on this tab).
+    if (chrome.sidePanel?.open) {
+      chrome.sidePanel.open({ tabId }).catch(() => {});
+    }
+  } else {
+    // Not a tracked tab — disable so the panel auto-hides.
+    if (chrome.sidePanel?.setOptions) {
+      chrome.sidePanel.setOptions({ tabId, enabled: false }).catch(() => {});
+    }
+  }
 });
 
 // ─── Panel open-state tracking (for toggle) ─────────────────────────────────
@@ -108,21 +133,25 @@ chrome.runtime.onConnect.addListener((port) => {
 
 function togglePanel(tab) {
   if (!tab?.id) return;
-  const winId = tab.windowId;
-  const existing = typeof winId === 'number' ? openPanelPorts.get(winId) : null;
-  if (existing) {
-    // Panel is open in this window — ask it to close itself.
-    try {
-      existing.postMessage({ type: MSG.PANEL_CLOSE });
-    } catch {
-      openPanelPorts.delete(winId);
+
+  if (panelEnabledTabs.has(tab.id)) {
+    // Panel is open on this tab — close it and revoke tracking.
+    disablePanelForTab(tab.id);
+    const winId = tab.windowId;
+    const port = typeof winId === 'number' ? openPanelPorts.get(winId) : null;
+    if (port) {
+      try { port.postMessage({ type: MSG.PANEL_CLOSE }); } catch { openPanelPorts.delete(winId); }
     }
     return;
   }
-  // Panel is closed — open it. Must be synchronous to preserve the user gesture.
+
+  // Not open on this tab — open it (only on GitHub pages).
+  if (!isGitHubUrl(tab.url || '')) return;
+  enablePanelForTab(tab.id);
   if (chrome.sidePanel?.open) {
     chrome.sidePanel.open({ tabId: tab.id }).catch((err) => {
       console.warn('[RepoLens SW] sidePanel.open failed (toolbar):', err.message);
+      disablePanelForTab(tab.id);
     });
   }
 }
@@ -214,13 +243,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const tabId = sender.tab?.id;
     if (typeof tabId === 'number') {
       pageInfoByTab.set(tabId, message.page);
-      // Open synchronously (no await) — the content-script click gesture is
-      // carried through this message, and the GitHub tab is already enabled.
+      enablePanelForTab(tabId);
       chrome.sidePanel
         .open({ tabId })
         .then(() => sendResponse({ ok: true }))
         .catch((err) => {
           console.warn('[RepoLens SW] sidePanel.open failed (FAB):', err.message);
+          disablePanelForTab(tabId);
           sendResponse({ ok: false, error: String(err) });
         });
       return true;
@@ -441,4 +470,5 @@ function humanizeBackendError(err) {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   pageInfoByTab.delete(tabId);
+  panelEnabledTabs.delete(tabId);
 });
