@@ -1,5 +1,5 @@
 const express = require('express');
-const { getInstantContext, getEnhancedContext, getDeepContext, hasGithubToken } = require('../services/github-mcp');
+const { getInstantContext, getDeepContext, hasGithubToken } = require('../services/github-mcp');
 const { buildMessages } = require('../services/context-builder');
 const { streamCompletion, hasClaudeAuth, getProvider, DEFAULT_MODEL } = require('../services/claude');
 const { sanitizeAnswer } = require('../services/sanitize');
@@ -65,7 +65,7 @@ router.post('/', async (req, res) => {
     return;
   }
 
-  const resolvedMode = mode === 'deep' ? 'deep' : mode === 'enhanced' ? 'enhanced' : 'instant';
+  const resolvedMode = mode === 'deep' ? 'deep' : 'instant';
   const resolvedPage = page || {
     type: pageType,
     org,
@@ -108,9 +108,6 @@ router.post('/', async (req, res) => {
         if (resolvedMode === 'deep') {
           console.log('[ASK] Fetching deep context (PR + repo)…');
           githubContext = await getDeepContext(contextPage);
-        } else if (resolvedMode === 'enhanced') {
-          console.log('[ASK] Fetching enhanced context…');
-          githubContext = await getEnhancedContext(contextPage);
         } else {
           githubContext = await getInstantContext(contextPage);
         }
@@ -134,9 +131,7 @@ router.post('/', async (req, res) => {
     const maxTokens =
       resolvedMode === 'deep'
         ? Number(process.env.CLAUDE_MAX_TOKENS_DEEP || 8192)
-        : resolvedMode === 'enhanced'
-          ? Number(process.env.CLAUDE_MAX_TOKENS_ENHANCED || 8192)
-          : Number(process.env.CLAUDE_MAX_TOKENS_INSTANT || 2048);
+        : Number(process.env.CLAUDE_MAX_TOKENS_INSTANT || 2048);
 
     console.log(`[ASK] Calling Claude…${requestedModel ? ` (model=${requestedModel})` : ''}`);
 

@@ -16,7 +16,6 @@ const PROMPTS = {
 };
 
 const INSTANT_CONTEXT_CAP = 60_000;
-const ENHANCED_CONTEXT_CAP = 200_000;
 const DEEP_CONTEXT_CAP = 300_000;
 
 const ANTI_PREAMBLE = `
@@ -34,8 +33,6 @@ function pickSystemPrompt(pageType, mode) {
   let modeHint = '';
   if (mode === 'deep') {
     modeHint = '\n\nYou are in Deep Context mode with the FULL repository context alongside the PR/page context. Give the most thorough, comprehensive answer possible. Cross-reference between the PR changes and repo structure, README, configs, manifests, and CODEOWNERS. Identify architectural implications, patterns, and potential impacts across the codebase.';
-  } else if (mode === 'enhanced') {
-    modeHint = '\n\nYou are in Enhanced mode with broader repository context. Give a thorough, in-depth answer. Reference specific files, code patterns, and cross-cutting concerns when relevant.';
   }
   return base + modeHint + ANTI_PREAMBLE;
 }
@@ -43,7 +40,6 @@ function pickSystemPrompt(pageType, mode) {
 function formatContextBlock(context, pageScrape, mode) {
   const parts = [];
   const isDeep = mode === 'deep';
-  const isEnhanced = mode === 'enhanced' || isDeep;
 
   if (context) {
     parts.push('## GitHub context');
@@ -84,8 +80,8 @@ function formatContextBlock(context, pageScrape, mode) {
       parts.push(context.message);
     }
 
-    // ─── Enhanced-only sections ──────────────────────────────────
-    if (isEnhanced && context.enhanced) {
+    // ─── Deep-mode sections ───────────────────────────────────────
+    if (isDeep && context.enhanced) {
       if (context.fullFileContents?.length) {
         parts.push('\n## Full content of changed files\n');
         for (const f of context.fullFileContents) {
@@ -229,8 +225,8 @@ function formatContextBlock(context, pageScrape, mode) {
     parts.push('```');
   }
 
-  const cap = isDeep ? DEEP_CONTEXT_CAP : isEnhanced ? ENHANCED_CONTEXT_CAP : INSTANT_CONTEXT_CAP;
-  const label = isDeep ? 'Deep' : isEnhanced ? 'Enhanced' : 'Instant';
+  const cap = isDeep ? DEEP_CONTEXT_CAP : INSTANT_CONTEXT_CAP;
+  const label = isDeep ? 'Deep' : 'Instant';
   let text = parts.join('\n');
   if (text.length > cap) {
     text = `${text.slice(0, cap)}\n\n…[context truncated for ${label} mode]`;
@@ -279,7 +275,7 @@ function truncate(text, max) {
  * @param {{
  *   pageType: string,
  *   question: string,
- *   mode: 'instant'|'enhanced'|'deep',
+ *   mode: 'instant'|'deep',
  *   githubContext: object|null,
  *   pageScrape?: object|null,
  *   page?: object|null

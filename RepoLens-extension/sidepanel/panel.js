@@ -67,9 +67,7 @@
 
   // ─── Mode toggle ────────────────────────────────────────────────────────────
   function setMode(mode, { persist = true } = {}) {
-    currentMode = mode === MODES.DEEP ? MODES.DEEP
-      : mode === MODES.ENHANCED ? MODES.ENHANCED
-      : MODES.INSTANT;
+    currentMode = mode === MODES.DEEP ? MODES.DEEP : MODES.INSTANT;
     modeBtns.forEach((btn) => {
       btn.classList.toggle('is-active', btn.dataset.mode === currentMode);
     });
@@ -94,19 +92,12 @@
       [PAGE_TYPES.REPO]:   'Uses the README and top-level file listing. Best for a quick overview of the repo.',
       _default:            'Fast answers using only this page\'s visible context.',
     },
-    enhanced: {
-      [PAGE_TYPES.PR]:     'Fetches full content of all changed files, review comments, linked issues, and expanded diff via the GitHub API.',
-      [PAGE_TYPES.FILE]:   'Fetches the full file plus importers and recent commit history via the GitHub API.',
-      [PAGE_TYPES.COMMIT]: 'Same as Instant for commits (commit context is already complete).',
-      [PAGE_TYPES.REPO]:   'Adds config files (Dockerfile, CI, tsconfig…), CODEOWNERS, and recent merged PRs via the GitHub API.',
-      _default:            'Broader context fetched via the GitHub API. Slower but much richer.',
-    },
     deep: {
-      [PAGE_TYPES.PR]:     'Everything in Enhanced, plus the full repo context — README, directory tree, configs, manifests, and CODEOWNERS alongside all PR data.',
-      [PAGE_TYPES.FILE]:   'Same as Enhanced for file pages (repo context is already included).',
-      [PAGE_TYPES.COMMIT]: 'Same as Enhanced for commit pages.',
-      [PAGE_TYPES.REPO]:   'Same as Enhanced for repo pages (full repo context is already used).',
-      _default:            'Enhanced + full repo context merged in. Best for architectural questions.',
+      [PAGE_TYPES.PR]:     'Fetches all changed files, review comments, linked issues, plus the full repo context — README, directory tree, configs, manifests, and CODEOWNERS.',
+      [PAGE_TYPES.FILE]:   'Fetches the full file plus importers, recent commit history, and broader repo context via the GitHub API.',
+      [PAGE_TYPES.COMMIT]: 'Fetches the full commit context plus repo-level config files, CODEOWNERS, and recent PRs.',
+      [PAGE_TYPES.REPO]:   'Fetches config files (Dockerfile, CI, tsconfig…), CODEOWNERS, recent merged PRs, and full repo structure via the GitHub API.',
+      _default:            'Full context fetched via the GitHub API. Best for thorough, architectural questions.',
     },
   };
 
@@ -323,7 +314,7 @@
     const modeLabel = meta?.mode || mode;
     return [
       meta?.model,
-      modeLabel === MODES.DEEP ? 'deep' : modeLabel === MODES.ENHANCED ? 'enhanced' : 'instant',
+      modeLabel === MODES.DEEP ? 'deep' : 'instant',
       meta?.cached ? 'cached' : null,
       meta?.hasGithubContext === false ? 'page-scrape only' : null,
     ].filter(Boolean).join(' · ');
@@ -348,12 +339,10 @@
     const answer = document.createElement('div');
     answer.className = 'turn-answer';
 
-    if ((turn.mode === MODES.ENHANCED || turn.mode === MODES.DEEP) && turn.status === 'done') {
+    if (turn.mode === MODES.DEEP && turn.status === 'done') {
       const badge = document.createElement('div');
       badge.className = 'enhanced-badge';
-      badge.textContent = turn.mode === MODES.DEEP
-        ? 'Deep — PR + full repo context used'
-        : 'Enhanced — deeper context used';
+      badge.textContent = 'Deep — full context used';
       answer.appendChild(badge);
     }
 
@@ -364,7 +353,7 @@
     if (turn.status === 'pending') {
       body.innerHTML =
         '<div class="progress"><span></span><span></span><span></span>' +
-        `<em>${turn.mode === MODES.DEEP ? 'Pulling PR + repo context' : turn.mode === MODES.ENHANCED ? 'Pulling broader context' : 'Generating answer'}</em></div>`;
+        `<em>${turn.mode === MODES.DEEP ? 'Pulling full context' : 'Generating answer'}</em></div>`;
     } else if (turn.status === 'error') {
       body.innerHTML = `<div class="answer-error">${escapeHtml(turn.error || 'Something went wrong.')}</div>`;
       const retry = document.createElement('button');
@@ -409,17 +398,17 @@
     row.appendChild(copy);
 
     if (turn.mode === MODES.INSTANT) {
-      const enhance = document.createElement('button');
-      enhance.type = 'button';
-      enhance.className = 'action-btn enhance-btn';
-      enhance.textContent = 'Enhance';
-      enhance.title = 'Re-ask with broader repository context';
-      enhance.disabled = isAsking;
-      enhance.addEventListener('click', () => {
-        setMode(MODES.ENHANCED);
-        askQuestion(turn.question, { fromChip: true, forceMode: MODES.ENHANCED });
+      const deepen = document.createElement('button');
+      deepen.type = 'button';
+      deepen.className = 'action-btn enhance-btn';
+      deepen.textContent = 'Go Deep';
+      deepen.title = 'Re-ask with full repository context';
+      deepen.disabled = isAsking;
+      deepen.addEventListener('click', () => {
+        setMode(MODES.DEEP);
+        askQuestion(turn.question, { fromChip: true, forceMode: MODES.DEEP });
       });
-      row.appendChild(enhance);
+      row.appendChild(deepen);
     }
 
     return row;
