@@ -32,7 +32,6 @@ const REPOLENS = {
 
   MODES: {
     INSTANT: 'instant',
-    ENHANCED: 'enhanced',
     DEEP: 'deep',
   },
 };

@@ -354,9 +354,7 @@ async function handleAskMessage(message, safeSend) {
   }
 
   const mode =
-    message.mode === MODES.DEEP ? MODES.DEEP
-      : message.mode === MODES.ENHANCED ? MODES.ENHANCED
-      : MODES.INSTANT;
+    message.mode === MODES.DEEP ? MODES.DEEP : MODES.INSTANT;
   const page =
     message.page ||
     (typeof message.tabId === 'number' ? pageInfoByTab.get(message.tabId) : null);
