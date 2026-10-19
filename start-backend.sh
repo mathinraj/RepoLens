@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BACKEND_DIR="$SCRIPT_DIR/backend"
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"
 
-REPO_REMOTE="https://github.intuit.com/mramasamy1/RepoLens.git"
+REPO_REMOTE="https://github.com/mramasamy1/RepoLens.git"
 
 echo ""
 echo -e "  ${BOLD}🔭 RepoLens${RESET}  ${DIM}starting up…${RESET}"

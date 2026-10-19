@@ -45,7 +45,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 // auto-hides the panel. Switching back to a tracked tab re-opens it.
 
 const PANEL_PATH = 'sidepanel/panel.html';
-const GITHUB_HOST = self.REPOLENS.HOST || 'github.intuit.com';
+const GITHUB_HOST = self.REPOLENS.HOST || 'github.com';
 
 /** @type {Set<number>} tabIds where the user explicitly opened the panel */
 const panelEnabledTabs = new Set();

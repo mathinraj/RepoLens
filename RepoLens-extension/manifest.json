@@ -2,10 +2,10 @@
   "manifest_version": 3,
   "name": "RepoLens",
   "version": "0.7.4",
-  "description": "AI-powered Q&A overlay for github.intuit.com — ask about repos, PRs, files, and commits without leaving the page.",
+  "description": "AI-powered Q&A overlay for github.com — ask about repos, PRs, files, and commits without leaving the page.",
   "permissions": ["activeTab", "sidePanel", "storage", "tabs"],
   "host_permissions": [
-    "https://github.intuit.com/*",
+    "https://github.com/*",
     "http://localhost:3847/*",
     "http://127.0.0.1:3847/*"
   ],
@@ -14,7 +14,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://github.intuit.com/*"],
+      "matches": ["https://github.com/*"],
       "js": ["shared/constants.js", "shared/page-detector.js", "content/content.js"],
       "css": ["content/content.css"],
       "run_at": "document_idle"

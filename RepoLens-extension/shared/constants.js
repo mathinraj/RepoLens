@@ -5,7 +5,7 @@
 const REPOLENS = {
   EXTENSION_NAME: 'RepoLens',
   BACKEND_URL: 'http://localhost:3847',
-  HOST: 'github.intuit.com',
+  HOST: 'github.com',
 
   /** Message types exchanged between content script, panel, and service worker */
   MSG: {

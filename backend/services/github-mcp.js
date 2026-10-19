@@ -8,7 +8,7 @@
 
 const { cache } = require('../cache/memory-cache');
 
-const API_BASE = (process.env.GITHUB_API_BASE || 'https://github.intuit.com/api/v3').replace(
+const API_BASE = (process.env.GITHUB_API_BASE || 'https://github.com/api/v3').replace(
   /\/$/,
   ''
 );

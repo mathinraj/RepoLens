@@ -10,7 +10,7 @@
 
 <br>
 
-![Made for](https://img.shields.io/badge/made%20for-github.intuit.com-0969da?style=for-the-badge&logo=github)
+![Made for](https://img.shields.io/badge/made%20for-github.com-0969da?style=for-the-badge&logo=github)
 ![Powered by](https://img.shields.io/badge/powered%20by-Claude-d97757?style=for-the-badge&logo=anthropic)
 ![Platform](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
 
@@ -28,7 +28,7 @@
 
 <br>
 
-RepoLens quietly rides along on `github.intuit.com`. The moment you land on a repo, PR,
+RepoLens quietly rides along on `github.com`. The moment you land on a repo, PR,
 file, or commit, a small lens appears in the corner. Click it, and a panel slides in that
 already *knows* what you're looking at — ready to summarize, explain, and dig in.
 
@@ -142,7 +142,7 @@ shows `anthropic: true` + `githubToken: true`.
 1. Open `chrome://extensions`
 2. Flip on **Developer mode**
 3. **Load unpacked** → pick `RepoLens-extension/`
-4. Open any [github.intuit.com](https://github.intuit.com) page
+4. Open any [github.com](https://github.com) page
 5. Click the blue lens and ask 🎉
 
 </td>
@@ -159,7 +159,7 @@ Everything lives in `backend/.env`:
 
 | Setting | Needed? | What it's for |
 |---|:---:|---|
-| `GITHUB_TOKEN` | ✅ * | Reads repos, PRs, and files on `github.intuit.com` |
+| `GITHUB_TOKEN` | ✅ * | Reads repos, PRs, and files on `github.com` |
 | `CLAUDE_PROVIDER` | — | `cli` (default, SSO login) or `api` |
 | `ANTHROPIC_API_KEY` | — | Only when `CLAUDE_PROVIDER=api` |
 | `CLAUDE_MODEL` | — | Defaults to `claude-sonnet-4-6` |

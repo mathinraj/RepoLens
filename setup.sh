@@ -20,7 +20,7 @@ BACKEND_DIR="$SCRIPT_DIR/backend"
 ENV_FILE="$BACKEND_DIR/.env"
 ENV_EXAMPLE="$BACKEND_DIR/.env.example"
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"
-GITHUB_TOKENS_URL="https://github.intuit.com/settings/tokens"
+GITHUB_TOKENS_URL="https://github.com/settings/tokens"
 
 open_url() {
   if command -v open &>/dev/null; then
@@ -47,8 +47,8 @@ if [ ! -f "$ENV_FILE" ]; then
     cat > "$ENV_FILE" <<'ENVEOF'
 CLAUDE_PROVIDER=cli
 PORT=3847
-GITHUB_API_BASE=https://github.intuit.com/api/v3
-GITHUB_HOST=github.intuit.com
+GITHUB_API_BASE=https://github.com/api/v3
+GITHUB_HOST=github.com
 CLAUDE_MODEL=claude-sonnet-4-6
 CLAUDE_MAX_TOKENS_INSTANT=2048
 CLAUDE_MAX_TOKENS_ENHANCED=4096
@@ -70,7 +70,7 @@ if [ -n "$current_token" ] && [ "$current_token" != "ghp_..." ]; then
   # Validate the token with a quick API call
   status_code=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: token $current_token" \
-    "https://github.intuit.com/api/v3/user" 2>/dev/null || echo "000")
+    "https://github.com/api/v3/user" 2>/dev/null || echo "000")
 
   if [ "$status_code" = "200" ]; then
     ok "GitHub token is valid"
