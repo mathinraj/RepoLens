@@ -47,7 +47,7 @@ if [ ! -f "$ENV_FILE" ]; then
     cat > "$ENV_FILE" <<'ENVEOF'
 CLAUDE_PROVIDER=cli
 PORT=3847
-GITHUB_API_BASE=https://github.com/api/v3
+GITHUB_API_BASE=https://api.github.com
 GITHUB_HOST=github.com
 CLAUDE_MODEL=claude-sonnet-4-6
 CLAUDE_MAX_TOKENS_INSTANT=2048
@@ -70,7 +70,7 @@ if [ -n "$current_token" ] && [ "$current_token" != "ghp_..." ]; then
   # Validate the token with a quick API call
   status_code=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: token $current_token" \
-    "https://github.com/api/v3/user" 2>/dev/null || echo "000")
+    "https://api.github.com/user" 2>/dev/null || echo "000")
 
   if [ "$status_code" = "200" ]; then
     ok "GitHub token is valid"
