@@ -1,0 +1,272 @@
+/* RepoLens landing: typographic poster on the scrollcraft engine.
+   Engine selectors ([data-sc-*], .sc-stage) are the mechanism and are not
+   restyled here. */
+
+:root {
+  --sc-canvas:     #0C0D10;
+  --sc-surface:    #15171C;
+  --sc-ink:        #F1F2F4;
+  --sc-ink-soft:   #A4AAB5;
+  --sc-accent:     #7CC4FF;
+  --sc-accent-ink: #07111C;
+
+  /* the inverted ground (privacy act): same hue family, opposite lightness */
+  --inv-canvas:   #F4F5F7;
+  --inv-ink:      #121418;
+  --inv-ink-soft: #4B5260;
+  --inv-accent:   #0A58CA;
+
+  --sc-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sc-font-text:    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sc-font-mono:    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --gutter: clamp(1.25rem, 5vw, 5.5rem);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --sc-canvas:     #F4F5F7;
+    --sc-surface:    #FFFFFF;
+    --sc-ink:        #121418;
+    --sc-ink-soft:   #4B5260;
+    --sc-accent:     #0A58CA;
+    --sc-accent-ink: #FFFFFF;
+
+    --inv-canvas:   #0C0D10;
+    --inv-ink:      #F1F2F4;
+    --inv-ink-soft: #A4AAB5;
+    --inv-accent:   #7CC4FF;
+  }
+}
+
+body { font-size: 1.0625rem; }
+
+a { color: inherit; }
+a:hover { color: var(--sc-accent); }
+
+.skip {
+  position: absolute; left: var(--gutter); top: -4rem; z-index: 100;
+  padding: 0.5rem 0.9rem; border-radius: 6px;
+  background: var(--sc-accent); color: var(--sc-accent-ink); font-weight: 600; text-decoration: none;
+}
+.skip:focus { top: 1rem; }
+
+.line-link {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--sc-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.3em;
+  transition: color 160ms var(--sc-ease-out);
+}
+
+/* ─── 1 · hero ────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100vh; min-height: 100svh;
+  padding: 0 var(--gutter);
+  overflow: clip;
+}
+
+.wordmark {
+  position: absolute; top: clamp(1.25rem, 4vh, 2.25rem); left: var(--gutter);
+  font: 800 clamp(1.15rem, 1rem + 0.5vw, 1.45rem)/1 var(--sc-font-display);
+  letter-spacing: -0.035em;
+  text-decoration: none;
+}
+.wordmark span { color: var(--sc-accent); }
+
+.top-link {
+  position: absolute; top: clamp(1.35rem, 4.2vh, 2.4rem); right: var(--gutter);
+  font-size: 0.95rem; text-underline-offset: 0.3em;
+}
+
+.poster {
+  position: absolute; left: calc(var(--gutter) - 0.04em); top: 14vh; top: 14svh;
+  margin: 0;
+  font: 800 clamp(4.25rem, 17.5vw, 20rem)/0.84 var(--sc-font-display);
+  letter-spacing: -0.065em;
+}
+.poster__line { display: block; }
+.poster__line--thin { font-weight: 300; letter-spacing: -0.055em; color: var(--sc-ink-soft); }
+
+.hero__foot {
+  position: absolute; left: var(--gutter); right: var(--gutter); bottom: clamp(1.75rem, 6vh, 3rem);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2.5rem;
+}
+.hero__lede { margin: 0; max-width: 46ch; color: var(--sc-ink-soft); font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem); line-height: 1.6; }
+.hero__lede strong { color: var(--sc-ink); font-weight: 600; }
+.hero__foot .line-link { font-size: clamp(1.05rem, 1rem + 0.3vw, 1.25rem); white-space: nowrap; }
+
+/* ─── 2 · quiet ───────────────────────────────────────────────────────── */
+.quiet {
+  min-height: 92vh; min-height: 92svh;
+  display: grid; align-items: center;
+  padding: 0 var(--gutter);
+}
+.quiet__text { justify-self: end; max-width: 30ch; font-size: clamp(1.2rem, 1rem + 1vw, 1.75rem); line-height: 1.45; letter-spacing: -0.012em; }
+.quiet__text p { margin: 0; }
+.quiet__text p + p { margin-top: 1.1em; }
+.quiet__soft { color: var(--sc-ink-soft); }
+
+/* ─── 3 · the fold (peak) ─────────────────────────────────────────────── */
+.fold__stage { background: var(--sc-canvas); }
+
+.fold__label {
+  position: absolute; left: var(--gutter); top: clamp(1.25rem, 5vh, 2.5rem);
+  margin: 0;
+  font: 500 0.8rem/1.4 var(--sc-font-mono); letter-spacing: 0.02em;
+  color: var(--sc-ink-soft);
+  opacity: clamp(0, calc(1 - (var(--sc-p, 0) - 0.3) * 6), 1);
+}
+
+.fold__files {
+  position: absolute; left: var(--gutter); right: var(--gutter); top: 50%;
+  translate: 0 -46%;
+  margin: 0; padding: 0; list-style: none;
+  columns: 3; column-gap: 2.5rem;
+  font: 400 clamp(0.72rem, 0.3rem + 1.2vw, 1.5rem)/1.9 var(--sc-font-mono);
+  color: var(--sc-ink);
+}
+
+/* The signature move: every row closes like a slat of a blind, top to bottom,
+   staggered by its own index, so the list physically folds away under the
+   reader's scroll. Driven only by the act's --sc-p. */
+.fold__files li {
+  --f: clamp(0, calc((var(--sc-p, 0) - 0.06 - var(--i) * 0.0075) * 11), 1);
+  break-inside: avoid;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transform-origin: 50% 0;
+  transform: scaleY(calc(1 - var(--f)));
+  opacity: calc(1 - var(--f) * 0.9);
+}
+.fold__files li:nth-child(3n + 2) { color: var(--sc-ink-soft); }
+
+.fold__answer {
+  position: absolute; left: var(--gutter); right: var(--gutter); top: 50%;
+  translate: 0 -50%;
+}
+.fold__q {
+  margin: 0 0 1.25rem;
+  font: 500 clamp(0.95rem, 0.9rem + 0.25vw, 1.1rem)/1.4 var(--sc-font-text);
+  color: var(--sc-ink-soft);
+}
+.fold__q::before { content: "Asked: "; color: var(--sc-accent); }
+.fold__a {
+  margin: 0;
+  font: 750 clamp(1.9rem, 0.8rem + 3.4vw, 4.2rem)/1.04 var(--sc-font-display);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.fold__a + .fold__a { margin-top: 0.32em; }
+.fold__meta { margin: 1.6rem 0 0; font-size: 0.9rem; color: var(--sc-ink-soft); max-width: 52ch; }
+
+/* ─── 4 · page kinds ──────────────────────────────────────────────────── */
+.kinds { padding: clamp(5rem, 12vh, 9rem) var(--gutter) clamp(4rem, 10vh, 7rem); }
+.kinds__title {
+  margin: 0 0 clamp(2rem, 5vh, 3.5rem);
+  font: 700 clamp(1.4rem, 1.1rem + 1.2vw, 2.25rem)/1.1 var(--sc-font-display);
+  letter-spacing: -0.025em;
+}
+.kinds__list { list-style: none; margin: 0; padding: 0; }
+.kind {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 30ch);
+  align-items: end; gap: 1rem 3rem;
+  padding: clamp(0.6rem, 1.6vh, 1.1rem) 0;
+  border-top: 1px solid var(--sc-hairline);
+}
+.kind:last-child { border-bottom: 1px solid var(--sc-hairline); }
+.kind__word {
+  display: block;
+  padding: 0.06em 0 0.12em;
+  font: 800 clamp(3rem, 1.2rem + 7.4vw, 9.5rem)/1 var(--sc-font-display);
+  letter-spacing: -0.055em;
+}
+.kind__qs { color: var(--sc-ink-soft); font-size: 1rem; line-height: 1.55; padding-bottom: 0.9em; }
+.kinds__modes { margin: clamp(2rem, 5vh, 3rem) 0 0; max-width: 60ch; color: var(--sc-ink-soft); }
+.kinds__modes strong { color: var(--sc-ink); font-weight: 600; }
+
+/* ─── 5 · your AI ─────────────────────────────────────────────────────── */
+.ai {
+  display: grid; grid-template-columns: minmax(16rem, 34ch) minmax(0, 1fr);
+  align-items: center; gap: 2rem 4rem;
+  padding: clamp(5rem, 14vh, 10rem) var(--gutter);
+}
+.ai__names { order: 2; text-align: right; }
+.ai__names p {
+  margin: 0;
+  font: 800 clamp(3rem, 1rem + 7vw, 8.5rem)/0.98 var(--sc-font-display);
+  letter-spacing: -0.055em;
+}
+.ai__names p:nth-child(2) { color: var(--sc-ink-soft); font-weight: 300; }
+.ai__terms h2 { margin: 0 0 1rem; font: 700 clamp(1.4rem, 1.1rem + 1.2vw, 2.25rem)/1.1 var(--sc-font-display); letter-spacing: -0.025em; }
+.ai__terms p { margin: 0; color: var(--sc-ink-soft); line-height: 1.6; }
+.ai__terms p + p { margin-top: 1rem; }
+
+/* ─── 6 · trust (inverted ground) ─────────────────────────────────────── */
+.trust, .trust__stage {
+  --sc-ink: var(--inv-ink);
+  --sc-ink-soft: var(--inv-ink-soft);
+  --sc-accent: var(--inv-accent);
+  background: var(--inv-canvas);
+  color: var(--inv-ink);
+}
+.trust__stage {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 var(--gutter);
+}
+.trust__claim {
+  margin: 0;
+  max-width: 11ch;
+  font: 800 clamp(3rem, 1rem + 7.2vw, 9rem)/0.94 var(--sc-font-display);
+  letter-spacing: -0.055em;
+}
+.trust__paths {
+  list-style: none; margin: clamp(2rem, 5vh, 3.25rem) 0 0; padding: 0;
+  font-size: clamp(1.1rem, 1rem + 0.6vw, 1.5rem); line-height: 1.5;
+}
+.trust__paths li + li { margin-top: 0.35em; }
+.trust__paths i { font-style: normal; color: var(--inv-accent); padding: 0 0.3em; }
+.trust__none { color: var(--inv-ink-soft); font-size: 0.8em; }
+.trust__link { align-self: flex-start; margin-top: 1.75rem; font-size: 1rem; text-underline-offset: 0.3em; text-decoration-color: var(--inv-accent); }
+.trust a:hover { color: var(--inv-accent); }
+
+/* ─── 7 · close: the quietest screen ──────────────────────────────────── */
+.close {
+  min-height: 100vh; min-height: 100svh;
+  display: flex; flex-direction: column;
+  padding: clamp(4rem, 10vh, 6rem) var(--gutter) clamp(1.5rem, 4vh, 2.5rem);
+}
+.close__body { display: flex; flex-direction: column; margin-block: auto; padding-top: 8vh; }
+.close__title { margin: 0 0 1rem; font: 600 1.05rem/1.4 var(--sc-font-text); letter-spacing: -0.01em; }
+.close__steps {
+  margin: 0 0 1.25rem; padding-left: 1.2em;
+  max-width: 44ch; color: var(--sc-ink-soft); font-size: 0.95rem; line-height: 1.7;
+}
+.close__steps li::marker { color: var(--sc-ink-soft); font-variant-numeric: tabular-nums; }
+.line-link--close { align-self: flex-start; font-size: 1.05rem; }
+.colophon {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sc-hairline);
+  font-size: 0.8rem; color: var(--sc-ink-soft);
+}
+.colophon nav { display: flex; gap: 1.5rem; }
+.colophon a { text-underline-offset: 0.25em; }
+
+/* ─── small screens ───────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .poster { top: 17svh; font-size: clamp(4rem, 21vw, 9rem); }
+  .hero__foot { grid-template-columns: 1fr; gap: 1.25rem; }
+  .quiet__text { justify-self: start; }
+  .fold__files { columns: 2; column-gap: 1.25rem; font-size: clamp(0.66rem, 0.4rem + 1.3vw, 0.9rem); }
+  .kind { grid-template-columns: 1fr; gap: 0.25rem; }
+  .kind__qs { padding-bottom: 0.4em; }
+  .ai { grid-template-columns: 1fr; }
+  .ai__names { order: 0; text-align: left; }
+}
+
+/* Fewer and gentler, not zero: the rows still close by fading, nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .fold__files li { transform: none; }
+}

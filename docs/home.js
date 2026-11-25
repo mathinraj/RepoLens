@@ -1,0 +1,1 @@
+ScrollCraft.mount(document.body);

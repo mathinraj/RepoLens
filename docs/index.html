@@ -2,19 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RepoLens — Ask AI about any GitHub repo, PR, file, or commit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>RepoLens · Ask AI about any GitHub repo, PR, file, or commit</title>
   <meta name="description" content="RepoLens is a free Chrome extension that answers questions about the GitHub repo, pull request, file, or commit you're viewing. Bring your own Claude, ChatGPT (OpenAI), or Gemini key. No servers, no tracking.">
+  <meta name="color-scheme" content="dark light">
   <link rel="canonical" href="https://repolensio.vercel.app/">
   <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
   <link rel="icon" type="image/png" sizes="128x128" href="/assets/logo-128.png">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="RepoLens — AI answers for GitHub">
+  <meta property="og:title" content="RepoLens: AI answers for GitHub">
   <meta property="og:description" content="Understand any repo, PR, file, or commit without leaving the page. Bring your own Claude, ChatGPT, or Gemini key.">
   <meta property="og:url" content="https://repolensio.vercel.app/">
   <meta property="og:image" content="https://repolensio.vercel.app/assets/logo-128.png">
   <meta name="twitter:card" content="summary">
-  <link rel="stylesheet" href="/site.css">
+  <link rel="stylesheet" href="/scrollcraft.css">
+  <link rel="stylesheet" href="/home.css">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -30,164 +32,169 @@
   </script>
 </head>
 <body>
-  <header class="nav">
-    <div class="wrap">
-      <a class="brand" href="/"><img src="/assets/logo.svg" alt="">RepoLens</a>
-      <nav class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#providers">AI providers</a>
-        <a href="#privacy">Privacy</a>
-        <a href="https://github.com/mathinraj/RepoLens">GitHub</a>
-        <a class="btn btn-primary" href="#install">Get RepoLens</a>
-      </nav>
+<a class="skip" href="#install">Skip to install</a>
+
+<main>
+
+  <!-- 1 · RECOGNITION -->
+  <section class="hero" data-sc-act="flow">
+    <a class="wordmark" href="/" aria-label="RepoLens home">Repo<span>Lens</span></a>
+    <a class="top-link" href="#install">Get RepoLens</a>
+
+    <h1 class="poster" data-sc-cue="0 1 0 0">
+      <span class="poster__line">41 files.</span>
+      <span class="poster__line poster__line--thin">3 lines.</span>
+    </h1>
+
+    <div class="hero__foot">
+      <p class="hero__lede"><strong>RepoLens reads the GitHub page you're on</strong> (a repo, a pull request, a file, or a commit) and answers your questions in a side panel, with your own Claude, ChatGPT, or Gemini key.</p>
+      <a class="line-link" href="#install">Get RepoLens, free</a>
     </div>
-  </header>
+  </section>
 
-  <main>
-    <section class="hero">
-      <div class="wrap">
-        <div>
-          <span class="eyebrow">Free Chrome extension · Bring your own key</span>
-          <h1>Your AI co-pilot for <span class="grad">reading code on GitHub</span></h1>
-          <p class="lede">Understand any repository, pull request, file, or commit without leaving the page. Click the lens, pick a question, and get a grounded answer in a side panel.</p>
-          <div class="cta-row">
-            <a class="btn btn-primary" href="#install">Get RepoLens</a>
-            <a class="btn btn-ghost" href="https://github.com/mathinraj/RepoLens">View source</a>
-          </div>
-          <p class="fine">Works with Claude, ChatGPT (OpenAI), and Gemini. No RepoLens account, no subscription.</p>
-        </div>
+  <!-- 2 · UNEASE (authored silence) -->
+  <section class="quiet" data-sc-act="flow">
+    <div class="quiet__text" data-sc-in data-sc-stagger="80">
+      <p>A review request lands. Forty-one files, two thousand lines of diff.</p>
+      <p class="quiet__soft">You open the first file, then the second, and you still can't say what it does.</p>
+    </div>
+  </section>
 
-        <div class="mock" aria-hidden="true">
-          <div class="mock-bar">
-            <div class="mock-title"><img src="/assets/logo.svg" alt="">RepoLens <span class="mock-sub">acme/payments#482</span></div>
-            <span class="pill">PR</span>
-          </div>
-          <div class="mock-body">
-            <div class="chips">
-              <span class="chip hot">This PR includes a migration — what are the risks?</span>
-              <span class="chip">Summarize this PR</span>
-              <span class="chip">Are there enough tests?</span>
-            </div>
-            <div class="q">Summarize this PR in plain English</div>
-            <div class="a">
-              <p><strong>Adds idempotency keys to the refund endpoint</strong> so retried requests can't double-refund.</p>
-              <ul>
-                <li>New <code>refund_requests</code> table with a unique key index</li>
-                <li><code>RefundService</code> checks the key before calling the processor</li>
-                <li>Risk: migration locks the table briefly on large datasets</li>
-              </ul>
-            </div>
-            <div class="meta">claude-sonnet-4-6 · instant</div>
-          </div>
-        </div>
+  <!-- 3 · RELIEF (the peak): the file list folds into the answer -->
+  <section class="fold" id="how" data-sc-act="pin" data-sc-span="3.4">
+    <div data-sc-stage class="fold__stage">
+      <p class="fold__label" aria-hidden="true">Sample pull request · acme/payments #482 · 41 files changed</p>
+
+      <ol class="fold__files" aria-label="Files changed in the sample pull request">
+        <li style="--i:0">db/migrations/0142_refund_requests.sql</li>
+        <li style="--i:1">db/migrations/0143_refund_requests_index.sql</li>
+        <li style="--i:2">src/refunds/RefundService.java</li>
+        <li style="--i:3">src/refunds/IdempotencyGuard.java</li>
+        <li style="--i:4">src/refunds/RefundRepository.java</li>
+        <li style="--i:5">src/refunds/RetryPolicy.java</li>
+        <li style="--i:6">src/refunds/model/RefundRequest.java</li>
+        <li style="--i:7">src/refunds/model/RefundStatus.java</li>
+        <li style="--i:8">src/refunds/events/RefundIssued.java</li>
+        <li style="--i:9">src/refunds/events/RefundRejected.java</li>
+        <li style="--i:10">src/api/RefundController.java</li>
+        <li style="--i:11">src/api/dto/RefundDto.java</li>
+        <li style="--i:12">src/api/dto/RefundResponse.java</li>
+        <li style="--i:13">src/api/errors/DuplicateRefund.java</li>
+        <li style="--i:14">src/processor/StripeClient.java</li>
+        <li style="--i:15">src/processor/ProcessorGateway.java</li>
+        <li style="--i:16">src/audit/AuditLog.java</li>
+        <li style="--i:17">src/audit/AuditEntry.java</li>
+        <li style="--i:18">src/config/RefundConfig.java</li>
+        <li style="--i:19">src/config/FeatureFlags.java</li>
+        <li style="--i:20">config/application.yml</li>
+        <li style="--i:21">config/application-prod.yml</li>
+        <li style="--i:22">ops/alerts.yml</li>
+        <li style="--i:23">ops/dashboards/refunds.json</li>
+        <li style="--i:24">docs/refunds.md</li>
+        <li style="--i:25">docs/runbooks/duplicate-refunds.md</li>
+        <li style="--i:26">CODEOWNERS</li>
+        <li style="--i:27">test/refunds/RefundServiceTest.java</li>
+        <li style="--i:28">test/refunds/IdempotencyGuardTest.java</li>
+        <li style="--i:29">test/refunds/RetryPolicyTest.java</li>
+        <li style="--i:30">test/refunds/RefundRepositoryTest.java</li>
+        <li style="--i:31">test/api/RefundControllerTest.java</li>
+        <li style="--i:32">test/api/DuplicateRefundTest.java</li>
+        <li style="--i:33">test/processor/StripeClientTest.java</li>
+        <li style="--i:34">test/audit/AuditLogTest.java</li>
+        <li style="--i:35">test/fixtures/refunds.json</li>
+        <li style="--i:36">test/fixtures/processor-responses.json</li>
+        <li style="--i:37">test/integration/RefundFlowIT.java</li>
+        <li style="--i:38">test/integration/MigrationIT.java</li>
+        <li style="--i:39">build.gradle</li>
+        <li style="--i:40">README.md</li>
+      </ol>
+
+      <div class="fold__answer">
+        <h2 class="fold__q" data-sc-cue="0.40 1 0.08 0.02">Summarize this PR in plain English.</h2>
+        <p class="fold__a" data-sc-cue="0.50 1 0.08 0.02">Refunds can't be issued twice now.</p>
+        <p class="fold__a" data-sc-cue="0.60 1 0.08 0.02">A key is checked before every refund.</p>
+        <p class="fold__a" data-sc-cue="0.70 1 0.08 0.02">The migration briefly locks the table.</p>
+        <p class="fold__meta" data-sc-cue="0.80 1 0.08 0.02">Sample answer. In the extension it streams into the side panel, next to the PR.</p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="section" id="features">
-      <div class="wrap">
-        <h2>It reads the room</h2>
-        <p class="sub">RepoLens knows whether you're on a sprawling monorepo or a one-line commit, and suggests the right questions for each.</p>
-        <div class="grid grid-2">
-          <div class="card">
-            <div class="icon">📦</div>
-            <h3>Repositories</h3>
-            <blockquote><div>What does this repo do?</div><div>What's the tech stack and architecture?</div><div>Where are the main entry points?</div></blockquote>
-          </div>
-          <div class="card">
-            <div class="icon">🔀</div>
-            <h3>Pull requests</h3>
-            <blockquote><div>Summarize this PR in plain English.</div><div>What's the risk of this change?</div><div>Does it touch auth, payments, or schemas?</div></blockquote>
-          </div>
-          <div class="card">
-            <div class="icon">📄</div>
-            <h3>Files</h3>
-            <blockquote><div>Explain this file's job.</div><div>What depends on it?</div><div>Any code-quality risks here?</div></blockquote>
-          </div>
-          <div class="card">
-            <div class="icon">📌</div>
-            <h3>Commits</h3>
-            <blockquote><div>What changed, and why?</div><div>What's the scope of impact?</div></blockquote>
-          </div>
-        </div>
+  <!-- 4 · CURIOSITY: page types wiped in -->
+  <section class="kinds" id="features" data-sc-act="flow">
+    <h2 class="kinds__title">It reads the room.</h2>
+    <ul class="kinds__list">
+      <li class="kind">
+        <span class="kind__word" data-sc-reveal="left" data-sc-reveal-at="0.12 0.30">Repo</span>
+        <span class="kind__qs">What does this repo do? Where are the entry points? What's the stack?</span>
+      </li>
+      <li class="kind">
+        <span class="kind__word" data-sc-reveal="left" data-sc-reveal-at="0.24 0.42">Pull request</span>
+        <span class="kind__qs">What's the risk? Does it touch auth, payments, or schemas? Are there enough tests?</span>
+      </li>
+      <li class="kind">
+        <span class="kind__word" data-sc-reveal="left" data-sc-reveal-at="0.36 0.54">File</span>
+        <span class="kind__qs">What is this file's job? What depends on it? Who owns it?</span>
+      </li>
+      <li class="kind">
+        <span class="kind__word" data-sc-reveal="left" data-sc-reveal-at="0.48 0.66">Commit</span>
+        <span class="kind__qs">What changed, and why? How far does it reach?</span>
+      </li>
+    </ul>
+    <p class="kinds__modes"><strong>Instant</strong> reads the page, the diff, and the README. <strong>Deep</strong> also pulls changed files, review comments, linked issues, configs, and CODEOWNERS.</p>
+  </section>
 
-        <div class="grid" style="margin-top:16px">
-          <div class="card">
-            <div class="icon">⚡</div>
-            <h3>Instant and Deep modes</h3>
-            <p>Instant reads the page, diff, and README. Deep pulls changed files, review comments, linked issues, configs, and CODEOWNERS.</p>
-          </div>
-          <div class="card">
-            <div class="icon">💬</div>
-            <h3>Chips or free text</h3>
-            <p>Tap a suggested question or ask your own. Conversations are kept per page, so they're there when you come back.</p>
-          </div>
-          <div class="card">
-            <div class="icon">🪶</div>
-            <h3>Stays out of the way</h3>
-            <p>A side panel that sits beside your code. Open it with the on-page lens, the toolbar, or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+  <!-- 5 · CONTROL: your AI -->
+  <section class="ai" id="providers" data-sc-act="flow">
+    <div class="ai__names" data-sc-in data-sc-stagger="70">
+      <p>Claude.</p>
+      <p>ChatGPT.</p>
+      <p>Gemini.</p>
+    </div>
+    <div class="ai__terms" data-sc-in data-sc-stagger="60">
+      <h2>Your AI, your key.</h2>
+      <p>RepoLens calls the provider you pick, directly, with your own API key. No RepoLens account and no subscription. Switch providers or models any time. A free Gemini key works too.</p>
+      <p>Add a GitHub token if you want private repositories and higher GitHub limits.</p>
+    </div>
+  </section>
 
-    <section class="section" id="providers">
-      <div class="wrap">
-        <h2>Pick your AI</h2>
-        <p class="sub">Use the provider you already pay for. RepoLens calls it directly with your own API key, and you can switch providers or models any time.</p>
-        <div class="providers">
-          <span class="provider">Anthropic Claude</span>
-          <span class="provider">OpenAI (ChatGPT models)</span>
-          <span class="provider">Google Gemini</span>
-        </div>
-        <p class="fine">Add an optional GitHub token for private repositories and higher GitHub API limits.</p>
-      </div>
-    </section>
+  <!-- 6 · TRUST: the inverted cut -->
+  <section class="trust" id="privacy" data-sc-act="pin" data-sc-span="1.8">
+    <div data-sc-stage class="trust__stage">
+      <h2 class="trust__claim" data-sc-cue="0 1 0 0.02" data-sc-kinetic="lines">There is no RepoLens server.</h2>
+      <ul class="trust__paths">
+        <li data-sc-cue="0.18 1 0.1 0.02"><span>Your browser</span> <i aria-hidden="true">→</i> <span>GitHub</span></li>
+        <li data-sc-cue="0.30 1 0.1 0.02"><span>Your browser</span> <i aria-hidden="true">→</i> <span>the AI you chose</span></li>
+        <li data-sc-cue="0.42 1 0.1 0.02" class="trust__none">Nothing else. No analytics, no tracking, keys never synced.</li>
+      </ul>
+      <a class="trust__link" href="/privacy.html" data-sc-cue="0.5 1 0.1 0.02">Read the privacy policy</a>
+    </div>
+  </section>
 
-    <section class="section" id="privacy">
-      <div class="wrap">
-        <h2>Private by design</h2>
-        <p class="sub">There is no RepoLens server. The extension talks straight to GitHub and the AI provider you choose.</p>
-        <ul class="checks">
-          <li><strong>Your keys stay in your browser.</strong> Stored locally, never synced, and each key is sent only to the service that issued it.</li>
-          <li><strong>Page content is read only when you ask.</strong> Nothing is sent to an AI provider until you ask a question.</li>
-          <li><strong>No analytics, no ads, no tracking.</strong> No account to create.</li>
-          <li><strong>Open source.</strong> Read every line on <a href="https://github.com/mathinraj/RepoLens">GitHub</a>.</li>
-        </ul>
-        <p class="fine">Read the full <a href="/privacy.html">privacy policy</a>.</p>
-      </div>
-    </section>
+  <!-- 7 · RESOLVE: the quietest close -->
+  <section class="close" id="install" data-sc-act="flow">
+    <div class="close__body">
+      <h2 class="close__title">Free. Ready in a minute.</h2>
+      <ol class="close__steps">
+        <li>Install RepoLens.</li>
+        <li>Add a Claude, ChatGPT, or Gemini key.</li>
+        <li>Open any GitHub page and press the lens.</li>
+      </ol>
+      <a class="line-link line-link--close" href="https://github.com/mathinraj/RepoLens#-get-it-running">Get RepoLens</a>
+    </div>
 
-    <section class="section" id="install">
-      <div class="wrap">
-        <h2 style="text-align:center">Ready in a minute</h2>
-        <p class="sub" style="margin-left:auto;margin-right:auto;text-align:center">Install, add a key, open any GitHub page.</p>
-        <ol class="steps">
-          <li class="card"><h3>Install RepoLens</h3><p>The welcome page opens and walks you through setup.</p></li>
-          <li class="card"><h3>Add your API key</h3><p>Claude, ChatGPT (OpenAI), or Gemini. A free Gemini key works too.</p></li>
-          <li class="card"><h3>Open any GitHub page</h3><p>Click the blue lens and ask.</p></li>
-        </ol>
-
-        <div class="cta-band" style="margin-top:40px">
-          <h2>Stop squinting at diffs</h2>
-          <p class="sub" style="margin:0 auto">What used to take 5–10 minutes of reading code now takes one click.</p>
-          <div class="cta-row">
-            <a class="btn btn-primary" href="https://github.com/mathinraj/RepoLens#-get-it-running">Get RepoLens</a>
-            <a class="btn btn-ghost" href="/feedback.html">Send feedback</a>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="wrap">
-      <span>RepoLens · Made by <a href="https://mathinraj.is-a.dev/">Mathinraj</a> · Not affiliated with GitHub, Anthropic, OpenAI, or Google.</span>
-      <nav>
+    <footer class="colophon">
+      <span>RepoLens, made by <a href="https://mathinraj.is-a.dev/">Mathinraj</a>. Not affiliated with GitHub, Anthropic, OpenAI, or Google.</span>
+      <nav aria-label="Site">
         <a href="/privacy.html">Privacy</a>
-        <a href="https://github.com/mathinraj/RepoLens">Source</a>
         <a href="/feedback.html">Feedback</a>
+        <a href="https://github.com/mathinraj/RepoLens">Source</a>
       </nav>
-    </div>
-  </footer>
+    </footer>
+  </section>
+
+</main>
+
+<script src="/scrollcraft.js"></script>
+<script src="/home.js"></script>
 </body>
 </html>

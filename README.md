@@ -149,7 +149,7 @@ Everything lives on the Settings page (gear icon in the panel or popup), and cha
 
 ## 🌐 Website
 
-`docs/` is the static site at [repolensio.vercel.app](https://repolensio.vercel.app) (landing page and privacy policy). Deploy it on Vercel with the project's **Root Directory** set to `docs`. Keep `docs/privacy.html` in sync with `store/PRIVACY.md`.
+`docs/` is the static site at [repolensio.vercel.app](https://repolensio.vercel.app) (landing page and privacy policy). The landing page (`index.html`, `home.css`, `home.js`) runs on the [scroll-craft](https://github.com/nateherkai/scroll-craft) engine (`scrollcraft.js`, `scrollcraft.css`), which is copied in unchanged; style the page in `home.css` rather than editing the engine. The other pages share `site.css`. Deploy it on Vercel with the project's **Root Directory** set to `docs`. Keep `docs/privacy.html` in sync with `store/PRIVACY.md`.
 
 <br>
 

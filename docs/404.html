@@ -3,24 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Page not found — RepoLens</title>
+  <title>Page not found · RepoLens</title>
   <meta name="robots" content="noindex">
   <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
   <link rel="stylesheet" href="/site.css">
-  <style>
-    main { min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 24px; }
-    .code { font-size: 88px; font-weight: 800; letter-spacing: -0.04em; margin: 16px 0 0; }
-    p { color: var(--muted); margin: 6px 0 24px; }
-  </style>
 </head>
 <body>
-  <main>
-    <div>
-      <img src="/assets/logo.svg" width="72" height="72" alt="RepoLens">
-      <div class="code grad">404</div>
-      <p>The lens couldn't find this page. It may have moved.</p>
-      <a class="btn btn-primary" href="/">Back to RepoLens</a>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/">Repo<span>Lens</span></a>
     </div>
+  </header>
+  <main class="lost">
+    <h1 class="code">404</h1>
+    <p>The lens couldn't find this page. It may have moved.</p>
+    <a href="/">Back to RepoLens</a>
   </main>
 </body>
 </html>
