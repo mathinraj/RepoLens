@@ -26,7 +26,7 @@ The extension compares the latest GitHub release with the installed version to s
 
 ## Store listing tab
 
-**Name** (from manifest): `RepoLens`
+**Name** (from manifest, max 75 characters): `RepoLens – AI Answers for GitHub Repos & PRs`. `short_name` stays `RepoLens` for places Chrome has little room.
 
 **Summary** (from manifest, max 132 chars):
 > Ask AI about any GitHub repo, PR, file, or commit in a side panel. Bring your own Claude, ChatGPT (OpenAI), or Gemini key.
