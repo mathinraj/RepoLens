@@ -1,0 +1,25 @@
+# RepoLens
+
+> RepoLens is a free, open-source Chrome extension that answers questions about the GitHub repository, pull request, file, or commit the user is viewing, in a side panel. Users bring their own API key for Anthropic Claude, OpenAI (ChatGPT models), or Google Gemini. There is no RepoLens server, account, analytics, or tracking.
+
+Key facts:
+
+- Detects the page type on github.com (repository, pull request, file, commit) and suggests relevant questions, such as "Summarize this PR", "What's the risk of this change?", or "Explain this file's job". Users can also type their own questions.
+- Two modes: Instant uses the page, diff, and README; Deep also fetches changed files, review comments, linked issues, config files, CODEOWNERS, and recent pull requests through the GitHub API.
+- AI providers: Anthropic Claude, OpenAI, and Google Gemini, called directly from the browser with the user's own key. Users can switch providers and models at any time.
+- An optional GitHub token enables private repositories and raises the GitHub API limit; without it, public repositories work with GitHub's anonymous limit of 60 requests per hour.
+- Keys are stored in chrome.storage.local (never synced) and each is sent only to the service that issued it. Page content is read only when the user asks a question.
+- Opens from the on-page lens button, the toolbar popup, or Ctrl/Cmd+Shift+L.
+- Requirements: Chrome 116 or later (Edge also supported). Desktop only.
+
+## Docs
+
+- [Homepage](https://repolensio.vercel.app/): features, AI providers, privacy summary, and install steps
+- [Privacy policy](https://repolensio.vercel.app/privacy.html): exactly what the extension accesses and where it goes
+- [README](https://github.com/mathinraj/RepoLens/blob/main/README.md): setup, settings, and publishing
+
+## Optional
+
+- [Source code](https://github.com/mathinraj/RepoLens)
+- [Feedback](https://repolensio.vercel.app/feedback.html): report a bug, request a feature, or ask a question
+- [Developer](https://mathinraj.is-a.dev/)

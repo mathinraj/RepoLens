@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoLens was removed</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="">RepoLens</a>
+    </div>
+  </header>
+
+  <main class="form-page">
+    <h1>RepoLens was removed</h1>
+    <p class="lede-sm">Sorry to see you go. What could have been better? It takes 20 seconds and really helps.</p>
+
+    <form id="feedback-form" class="form-card" data-page="uninstall" novalidate>
+      <fieldset class="reasons">
+        <legend>Why did you uninstall? <span class="opt">pick any</span></legend>
+        <label class="check"><input type="checkbox" name="reason" value="Setup was too hard (API key, etc.)"><span>Setup was too hard (API key, etc.)</span></label>
+        <label class="check"><input type="checkbox" name="reason" value="It didn't work or showed errors"><span>It didn't work or showed errors</span></label>
+        <label class="check"><input type="checkbox" name="reason" value="Answers weren't good enough"><span>Answers weren't good enough</span></label>
+        <label class="check"><input type="checkbox" name="reason" value="Too slow"><span>Too slow</span></label>
+        <label class="check"><input type="checkbox" name="reason" value="API costs were too high"><span>API costs were too high</span></label>
+        <label class="check"><input type="checkbox" name="reason" value="The on-page button got in the way"><span>The on-page button got in the way</span></label>
+        <label class="check"><input type="checkbox" name="reason" value="Privacy concerns"><span>Privacy concerns</span></label>
+        <label class="check"><input type="checkbox" name="reason" value="Just trying it out"><span>Just trying it out</span></label>
+      </fieldset>
+
+      <label class="field">
+        <span class="field-label">Anything else? <span class="opt">optional</span></span>
+        <textarea name="message" rows="4" maxlength="4000" placeholder="What would have made you keep it?"></textarea>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Email <span class="opt">optional</span></span>
+        <input type="email" name="email" autocomplete="email" placeholder="you@example.com">
+        <span class="hint">Only if you'd like a reply, for example when your issue is fixed.</span>
+      </label>
+
+      <div id="diagnostics" class="diagnostics is-hidden">
+        <label class="check">
+          <input type="checkbox" id="include-diagnostics" checked>
+          <span>Include these details from RepoLens</span>
+        </label>
+        <dl id="diagnostics-list"></dl>
+        <p class="hint">No API keys, tokens, repository names, questions, or answers are ever included.</p>
+      </div>
+
+      <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Send</button>
+        <p id="form-status" class="form-status" role="status"></p>
+      </div>
+    </form>
+
+    <p class="fine center">Changed your mind? <a href="/#install">Reinstall RepoLens</a> · Messages are delivered by <a href="https://www.emailjs.com/legal/privacy-policy/">EmailJS</a> · <a href="/privacy.html#feedback">Privacy</a></p>
+  </main>
+
+  <script src="/feedback.js"></script>
+</body>
+</html>

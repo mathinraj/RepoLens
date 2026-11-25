@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+backend/.env
+dist/
+.vscode/
+.idea/
+
+plan.md
+
+*.pptx
+*.py
+
+repolens.md

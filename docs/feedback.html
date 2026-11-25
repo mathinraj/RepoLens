@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send feedback — RepoLens</title>
+  <meta name="description" content="Report a bug, request a feature, or ask a question about RepoLens.">
+  <link rel="canonical" href="https://repolensio.vercel.app/feedback.html">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/logo-128.png">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="">RepoLens</a>
+      <nav class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/privacy.html">Privacy</a>
+        <a class="btn btn-primary" href="/#install">Get RepoLens</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="form-page">
+    <h1>Send feedback</h1>
+    <p class="lede-sm">Found a bug, have an idea, or a question? Every message is read.</p>
+
+    <form id="feedback-form" class="form-card" data-page="feedback" novalidate>
+      <fieldset class="type-picker">
+        <legend>What's this about?</legend>
+        <label><input type="radio" name="type" value="bug" checked><span>🐞 Bug</span></label>
+        <label><input type="radio" name="type" value="feature"><span>💡 Feature idea</span></label>
+        <label><input type="radio" name="type" value="question"><span>❓ Question</span></label>
+        <label><input type="radio" name="type" value="other"><span>💬 Other</span></label>
+      </fieldset>
+
+      <label class="field">
+        <span class="field-label">Message</span>
+        <textarea name="message" rows="6" maxlength="4000" placeholder="What happened, or what would you like? For bugs, include the page type (PR, repo, file, commit) and mode (Instant or Deep)." required></textarea>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Email <span class="opt">optional</span></span>
+        <input type="email" name="email" autocomplete="email" placeholder="you@example.com">
+        <span class="hint">Only used to reply to you.</span>
+      </label>
+
+      <div id="diagnostics" class="diagnostics is-hidden">
+        <label class="check">
+          <input type="checkbox" id="include-diagnostics" checked>
+          <span>Include these details from RepoLens</span>
+        </label>
+        <dl id="diagnostics-list"></dl>
+        <p class="hint">No API keys, tokens, repository names, questions, or answers are ever included.</p>
+      </div>
+
+      <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Send feedback</button>
+        <p id="form-status" class="form-status" role="status"></p>
+      </div>
+    </form>
+
+    <p class="fine center">Messages are delivered by <a href="https://www.emailjs.com/legal/privacy-policy/">EmailJS</a>. See the <a href="/privacy.html#feedback">privacy policy</a>.</p>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>RepoLens · Made by <a href="https://mathinraj.is-a.dev/">Mathinraj</a></span>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="https://github.com/mathinraj/RepoLens">Source</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/feedback.js"></script>
+</body>
+</html>

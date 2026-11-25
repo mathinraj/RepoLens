@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>What's new in RepoLens</title>
+    <link rel="icon" href="../icons/search-compass.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="whatsnew.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="head">
+        <img src="../icons/search-compass.svg" width="44" height="44" alt="" />
+        <div>
+          <h1>What's new in RepoLens</h1>
+          <p id="sub" class="sub"></p>
+        </div>
+      </header>
+
+      <section id="update" class="update is-hidden" role="status">
+        <div>
+          <strong id="update-title"></strong>
+          <span id="update-text">Chrome installs updates automatically, or you can update now.</span>
+        </div>
+        <button type="button" id="update-btn" class="btn">Update now</button>
+      </section>
+
+      <section id="releases" class="releases">
+        <p class="loading">Loading release notes…</p>
+      </section>
+
+      <footer class="foot">
+        <a id="all-releases" href="#" target="_blank" rel="noopener">All releases on GitHub</a>
+        <a id="feedback-link" href="#" target="_blank" rel="noopener">Send feedback</a>
+      </footer>
+    </main>
+
+    <script src="../sidepanel/vendor/marked.min.js"></script>
+    <script src="../sidepanel/vendor/purify.min.js"></script>
+    <script src="../shared/constants.js"></script>
+    <script src="../shared/support.js"></script>
+    <script src="../shared/releases.js"></script>
+    <script src="whatsnew.js"></script>
+  </body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — RepoLens</title>
+  <meta name="description" content="RepoLens has no servers and does not collect, sell, or share your data. Read exactly what the extension accesses and where it goes.">
+  <link rel="canonical" href="https://repolensio.vercel.app/privacy.html">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/logo-128.png">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="">RepoLens</a>
+      <nav class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="https://github.com/mathinraj/RepoLens">GitHub</a>
+        <a class="btn btn-primary" href="/#install">Get RepoLens</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="prose">
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: November 25, 2026</p>
+
+    <p class="summary">RepoLens is a Chrome extension that answers questions about the GitHub page you are viewing. In short: <strong>RepoLens has no servers of its own and does not collect, sell, or share your data.</strong> Everything runs in your browser and talks directly to GitHub and to the AI provider you choose (Anthropic, OpenAI, or Google) using credentials you provide.</p>
+
+    <h2>What RepoLens accesses</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Why</th><th>Where it goes</th></tr></thead>
+        <tbody>
+          <tr><td>The URL path of github.com pages you visit (e.g. <code>owner/repo/pull/12</code>)</td><td>To detect whether you are on a repo, pull request, file, or commit page and show the right suggested questions</td><td>Stays in your browser</td></tr>
+          <tr><td>Visible content of the current github.com page (PR title/description, file text, README, commit message)</td><td>Read <strong>only when you ask a question</strong>, to give the AI context</td><td>Sent to your selected AI provider with your question</td></tr>
+          <tr><td>Repository data from the GitHub API (README, diffs, file contents, comments, CODEOWNERS)</td><td>To give the AI accurate context for your question</td><td>Fetched from <code>api.github.com</code>, then sent to your selected AI provider with your question</td></tr>
+          <tr><td>Questions you type</td><td>To answer them</td><td>Sent to your selected AI provider</td></tr>
+          <tr><td>Your AI provider API key(s) and optional GitHub token</td><td>To call those services on your behalf</td><td>Stored in your browser; each key is sent only to the service that issued it</td></tr>
+          <tr><td>Conversation history (your questions and answers, up to 30 per page)</td><td>So answers are still there when you come back to a page</td><td>Stored in your browser only</td></tr>
+          <tr><td>Preferences (provider, model, mode, pre-fetch toggle)</td><td>To remember your settings</td><td>Stored in your browser only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Where data is stored</h2>
+    <p>All data RepoLens stores is kept in <code>chrome.storage.local</code> on your device. It is <strong>not</strong> synced to your Google account and is never sent to the RepoLens developer.</p>
+
+    <h2>Third parties</h2>
+    <p>RepoLens sends data only to these services, and only to do what you asked:</p>
+    <ul>
+      <li><strong>Your selected AI provider</strong> receives your question plus the page and repository context needed to answer it, authenticated with your own API key. Only the provider you select in Preferences receives data, and its handling of that data is governed by its own terms:
+        <ul>
+          <li>Anthropic (<code>api.anthropic.com</code>): <a href="https://www.anthropic.com/legal/privacy">anthropic.com/legal/privacy</a></li>
+          <li>OpenAI (<code>api.openai.com</code>): <a href="https://openai.com/policies/privacy-policy">openai.com/policies/privacy-policy</a></li>
+          <li>Google Gemini API (<code>generativelanguage.googleapis.com</code>): <a href="https://ai.google.dev/gemini-api/terms">Gemini API terms</a> and <a href="https://policies.google.com/privacy">Google privacy policy</a>. Google may use data sent with free-tier Gemini API keys to improve its products; see Google's terms.</li>
+        </ul>
+      </li>
+      <li><strong>GitHub</strong> (<code>api.github.com</code>): receives read-only API requests for the repository you are viewing, authenticated with your GitHub token if you provided one. See the <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub privacy statement</a>.</li>
+    </ul>
+    <p>If you enable <strong>Pre-fetch page context</strong> and have set a GitHub token, RepoLens requests basic context for repository pages from the GitHub API in the background as you browse github.com. This data goes only to GitHub and is not sent to any AI provider until you ask a question.</p>
+    <p>RepoLens contains no analytics, advertising, or tracking, and loads no remote code.</p>
+    <p><strong>Update check:</strong> about twice a day, RepoLens asks GitHub (<code>api.github.com/repos/mathinraj/RepoLens/releases</code>) for the latest RepoLens release so it can tell you when an update or new release notes are available. The request contains no personal data and never includes your GitHub token.</p>
+
+    <h2 id="feedback">Feedback and uninstall survey</h2>
+    <p><strong>Feedback</strong> links (toolbar popup, Preferences, welcome and What's new pages) open the <a href="/feedback.html">feedback form</a>. When RepoLens is uninstalled, Chrome opens a short survey at <code>repolensio.vercel.app/uninstall.html</code>. Both links carry these diagnostics in the URL: RepoLens version and store build, browser and version, operating system, selected AI provider and model, whether an API key and a GitHub token are set (yes/no), number of answers received, and days since install. They never include API keys, tokens, repository names, questions, or answers.</p>
+    <p>The pages show you those diagnostics, and you can untick them before sending. Nothing is sent unless you press <strong>Send</strong>. When you do, your message, the diagnostics you chose to include, and your email address (only if you enter one) are delivered to the developer by email through <a href="https://www.emailjs.com/legal/privacy-policy/">EmailJS</a>. The website is hosted on Vercel, which may keep standard request logs (including page URLs) as described in <a href="https://vercel.com/legal/privacy-policy">Vercel's privacy policy</a>.</p>
+
+    <h2>Your control</h2>
+    <ul>
+      <li><strong>Clear a conversation:</strong> use the <strong>Clear</strong> button in the side panel.</li>
+      <li><strong>Remove credentials:</strong> delete them on the RepoLens Preferences page and save.</li>
+      <li><strong>Delete everything:</strong> uninstall the extension; Chrome deletes all of its stored data.</li>
+      <li><strong>Revoke access:</strong> revoke your AI key with its provider (<a href="https://console.anthropic.com/settings/keys">Anthropic</a>, <a href="https://platform.openai.com/api-keys">OpenAI</a>, <a href="https://aistudio.google.com/app/apikey">Google AI Studio</a>) or the GitHub token at <a href="https://github.com/settings/tokens">github.com/settings/tokens</a>.</li>
+    </ul>
+
+    <h2>Data use commitments</h2>
+    <p>RepoLens does not sell user data, does not use or transfer it for purposes unrelated to answering your questions, and does not use it to determine creditworthiness or for lending.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the updated version will be published at this URL with a new "Last updated" date.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about this policy: use the <a href="/feedback.html">feedback form</a>.</p>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>RepoLens · Made by <a href="https://mathinraj.is-a.dev/">Mathinraj</a></span>
+      <nav>
+        <a href="/">Home</a>
+        <a href="https://github.com/mathinraj/RepoLens">Source</a>
+        <a href="/feedback.html">Feedback</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

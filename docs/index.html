@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoLens — Ask AI about any GitHub repo, PR, file, or commit</title>
+  <meta name="description" content="RepoLens is a free Chrome extension that answers questions about the GitHub repo, pull request, file, or commit you're viewing. Bring your own Claude, ChatGPT (OpenAI), or Gemini key. No servers, no tracking.">
+  <link rel="canonical" href="https://repolensio.vercel.app/">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/logo-128.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="RepoLens — AI answers for GitHub">
+  <meta property="og:description" content="Understand any repo, PR, file, or commit without leaving the page. Bring your own Claude, ChatGPT, or Gemini key.">
+  <meta property="og:url" content="https://repolensio.vercel.app/">
+  <meta property="og:image" content="https://repolensio.vercel.app/assets/logo-128.png">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="/site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "RepoLens",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Chrome, Edge",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "description": "Ask AI about any GitHub repo, pull request, file, or commit in a side panel. Bring your own Claude, ChatGPT (OpenAI), or Gemini key.",
+    "url": "https://repolensio.vercel.app/",
+    "author": { "@type": "Person", "name": "Mathinraj", "url": "https://mathinraj.is-a.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="">RepoLens</a>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#providers">AI providers</a>
+        <a href="#privacy">Privacy</a>
+        <a href="https://github.com/mathinraj/RepoLens">GitHub</a>
+        <a class="btn btn-primary" href="#install">Get RepoLens</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <span class="eyebrow">Free Chrome extension · Bring your own key</span>
+          <h1>Your AI co-pilot for <span class="grad">reading code on GitHub</span></h1>
+          <p class="lede">Understand any repository, pull request, file, or commit without leaving the page. Click the lens, pick a question, and get a grounded answer in a side panel.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#install">Get RepoLens</a>
+            <a class="btn btn-ghost" href="https://github.com/mathinraj/RepoLens">View source</a>
+          </div>
+          <p class="fine">Works with Claude, ChatGPT (OpenAI), and Gemini. No RepoLens account, no subscription.</p>
+        </div>
+
+        <div class="mock" aria-hidden="true">
+          <div class="mock-bar">
+            <div class="mock-title"><img src="/assets/logo.svg" alt="">RepoLens <span class="mock-sub">acme/payments#482</span></div>
+            <span class="pill">PR</span>
+          </div>
+          <div class="mock-body">
+            <div class="chips">
+              <span class="chip hot">This PR includes a migration — what are the risks?</span>
+              <span class="chip">Summarize this PR</span>
+              <span class="chip">Are there enough tests?</span>
+            </div>
+            <div class="q">Summarize this PR in plain English</div>
+            <div class="a">
+              <p><strong>Adds idempotency keys to the refund endpoint</strong> so retried requests can't double-refund.</p>
+              <ul>
+                <li>New <code>refund_requests</code> table with a unique key index</li>
+                <li><code>RefundService</code> checks the key before calling the processor</li>
+                <li>Risk: migration locks the table briefly on large datasets</li>
+              </ul>
+            </div>
+            <div class="meta">claude-sonnet-4-6 · instant</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="wrap">
+        <h2>It reads the room</h2>
+        <p class="sub">RepoLens knows whether you're on a sprawling monorepo or a one-line commit, and suggests the right questions for each.</p>
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="icon">📦</div>
+            <h3>Repositories</h3>
+            <blockquote><div>What does this repo do?</div><div>What's the tech stack and architecture?</div><div>Where are the main entry points?</div></blockquote>
+          </div>
+          <div class="card">
+            <div class="icon">🔀</div>
+            <h3>Pull requests</h3>
+            <blockquote><div>Summarize this PR in plain English.</div><div>What's the risk of this change?</div><div>Does it touch auth, payments, or schemas?</div></blockquote>
+          </div>
+          <div class="card">
+            <div class="icon">📄</div>
+            <h3>Files</h3>
+            <blockquote><div>Explain this file's job.</div><div>What depends on it?</div><div>Any code-quality risks here?</div></blockquote>
+          </div>
+          <div class="card">
+            <div class="icon">📌</div>
+            <h3>Commits</h3>
+            <blockquote><div>What changed, and why?</div><div>What's the scope of impact?</div></blockquote>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:16px">
+          <div class="card">
+            <div class="icon">⚡</div>
+            <h3>Instant and Deep modes</h3>
+            <p>Instant reads the page, diff, and README. Deep pulls changed files, review comments, linked issues, configs, and CODEOWNERS.</p>
+          </div>
+          <div class="card">
+            <div class="icon">💬</div>
+            <h3>Chips or free text</h3>
+            <p>Tap a suggested question or ask your own. Conversations are kept per page, so they're there when you come back.</p>
+          </div>
+          <div class="card">
+            <div class="icon">🪶</div>
+            <h3>Stays out of the way</h3>
+            <p>A side panel that sits beside your code. Open it with the on-page lens, the toolbar, or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="providers">
+      <div class="wrap">
+        <h2>Pick your AI</h2>
+        <p class="sub">Use the provider you already pay for. RepoLens calls it directly with your own API key, and you can switch providers or models any time.</p>
+        <div class="providers">
+          <span class="provider">Anthropic Claude</span>
+          <span class="provider">OpenAI (ChatGPT models)</span>
+          <span class="provider">Google Gemini</span>
+        </div>
+        <p class="fine">Add an optional GitHub token for private repositories and higher GitHub API limits.</p>
+      </div>
+    </section>
+
+    <section class="section" id="privacy">
+      <div class="wrap">
+        <h2>Private by design</h2>
+        <p class="sub">There is no RepoLens server. The extension talks straight to GitHub and the AI provider you choose.</p>
+        <ul class="checks">
+          <li><strong>Your keys stay in your browser.</strong> Stored locally, never synced, and each key is sent only to the service that issued it.</li>
+          <li><strong>Page content is read only when you ask.</strong> Nothing is sent to an AI provider until you ask a question.</li>
+          <li><strong>No analytics, no ads, no tracking.</strong> No account to create.</li>
+          <li><strong>Open source.</strong> Read every line on <a href="https://github.com/mathinraj/RepoLens">GitHub</a>.</li>
+        </ul>
+        <p class="fine">Read the full <a href="/privacy.html">privacy policy</a>.</p>
+      </div>
+    </section>
+
+    <section class="section" id="install">
+      <div class="wrap">
+        <h2 style="text-align:center">Ready in a minute</h2>
+        <p class="sub" style="margin-left:auto;margin-right:auto;text-align:center">Install, add a key, open any GitHub page.</p>
+        <ol class="steps">
+          <li class="card"><h3>Install RepoLens</h3><p>The welcome page opens and walks you through setup.</p></li>
+          <li class="card"><h3>Add your API key</h3><p>Claude, ChatGPT (OpenAI), or Gemini. A free Gemini key works too.</p></li>
+          <li class="card"><h3>Open any GitHub page</h3><p>Click the blue lens and ask.</p></li>
+        </ol>
+
+        <div class="cta-band" style="margin-top:40px">
+          <h2>Stop squinting at diffs</h2>
+          <p class="sub" style="margin:0 auto">What used to take 5–10 minutes of reading code now takes one click.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="https://github.com/mathinraj/RepoLens#-get-it-running">Get RepoLens</a>
+            <a class="btn btn-ghost" href="/feedback.html">Send feedback</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>RepoLens · Made by <a href="https://mathinraj.is-a.dev/">Mathinraj</a> · Not affiliated with GitHub, Anthropic, OpenAI, or Google.</span>
+      <nav>
+        <a href="/privacy.html">Privacy</a>
+        <a href="https://github.com/mathinraj/RepoLens">Source</a>
+        <a href="/feedback.html">Feedback</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

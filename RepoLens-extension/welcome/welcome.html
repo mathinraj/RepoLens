@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to RepoLens</title>
+    <link rel="icon" href="../icons/search-compass.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="welcome.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div id="pin-banner" class="pin-banner is-hidden" role="status">
+        <div class="pin-head">
+          <span class="pin-icon" aria-hidden="true">📌</span>
+          <div class="pin-text">
+            <strong>Pin RepoLens to your toolbar</strong>
+            <span>One click to open the panel, see your setup, or change settings.</span>
+          </div>
+          <button type="button" id="pin-dismiss" class="pin-dismiss" aria-label="Dismiss">✕</button>
+        </div>
+        <ol id="pin-steps" class="pin-steps">
+          <li>Click the <strong>puzzle piece</strong> (🧩) in the browser toolbar</li>
+          <li>Find <strong>RepoLens</strong> in the list</li>
+          <li>Click the <strong>pin</strong> (📌) next to it</li>
+        </ol>
+        <div id="pin-done" class="pin-done is-hidden">✓ RepoLens is pinned to your toolbar</div>
+      </div>
+
+      <section class="hero">
+        <img src="../icons/search-compass.svg" width="72" height="72" alt="" class="hero-logo" />
+        <span id="version" class="hero-badge"></span>
+        <h1>Welcome to <span class="grad">RepoLens</span></h1>
+        <p class="hero-sub">Ask AI about any GitHub repo, pull request, file, or commit, right beside the code.</p>
+      </section>
+
+      <section class="card">
+        <h2>Get set up</h2>
+        <ol class="checklist">
+          <li class="task" id="task-key">
+            <span class="task-mark" aria-hidden="true">1</span>
+            <div class="task-body">
+              <h3>Choose an AI provider and add your key</h3>
+              <p id="task-key-text">Use Claude, ChatGPT (OpenAI), or Gemini. A free Gemini key works too.</p>
+            </div>
+            <button type="button" id="btn-settings" class="btn btn-primary">Open Settings</button>
+          </li>
+          <li class="task" id="task-github">
+            <span class="task-mark" aria-hidden="true">2</span>
+            <div class="task-body">
+              <h3>Add a GitHub token <span class="opt">optional</span></h3>
+              <p id="task-github-text">Needed for private repos and higher GitHub limits. Public repos work without one.</p>
+            </div>
+            <button type="button" id="btn-github" class="btn btn-ghost">Add token</button>
+          </li>
+          <li class="task" id="task-try">
+            <span class="task-mark" aria-hidden="true">3</span>
+            <div class="task-body">
+              <h3>Try it on a pull request</h3>
+              <p>Open a sample PR, click the blue lens, and pick "Summarize this PR".</p>
+            </div>
+            <button type="button" id="btn-try" class="btn btn-ghost">Open sample PR</button>
+          </li>
+        </ol>
+      </section>
+
+      <section class="ways">
+        <div class="way">
+          <span class="way-icon" aria-hidden="true">🔍</span>
+          <h3>On-page lens</h3>
+          <p>The blue button in the corner of any GitHub page.</p>
+        </div>
+        <div class="way">
+          <span class="way-icon" aria-hidden="true">🧭</span>
+          <h3>Toolbar icon</h3>
+          <p>Open or close the panel, and see your setup.</p>
+        </div>
+        <div class="way">
+          <span class="way-icon" aria-hidden="true">⌨️</span>
+          <h3>Keyboard</h3>
+          <p>Press <kbd id="shortcut">Ctrl+Shift+L</kbd> on a GitHub page.</p>
+        </div>
+      </section>
+
+      <p class="privacy">
+        🔐 Your keys stay in this browser and are sent only to the service that issued them.
+        There is no RepoLens server. <a id="privacy-link" href="#" target="_blank" rel="noopener">Privacy policy</a>
+      </p>
+
+      <footer class="foot">
+        <span>RepoLens · Made by <a href="https://mathinraj.is-a.dev/" target="_blank" rel="noopener">Mathinraj</a></span>
+        <span class="foot-links">
+          <a id="site-link" href="#" target="_blank" rel="noopener">Website</a>
+          <a id="feedback-link" href="#" target="_blank" rel="noopener">Feedback</a>
+        </span>
+      </footer>
+    </main>
+
+    <script src="../shared/constants.js"></script>
+    <script src="../shared/support.js"></script>
+    <script src="welcome.js"></script>
+  </body>
+</html>
