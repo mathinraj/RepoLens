@@ -245,6 +245,17 @@ a:hover { color: var(--sc-accent); }
 }
 .close__steps li::marker { color: var(--sc-ink-soft); font-variant-numeric: tabular-nums; }
 .line-link--close { align-self: flex-start; font-size: 1.05rem; }
+.close__steps code { font: 0.85em var(--sc-font-mono); }
+.close__stores {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.75rem;
+  margin: 1.5rem 0 0; padding: 0; list-style: none;
+  font-size: 0.875rem; color: var(--sc-ink-soft);
+}
+.close__stores span {
+  margin-left: 0.4rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--sc-hairline-strong);
+  font: 500 0.7rem var(--sc-font-mono); letter-spacing: 0.02em;
+}
 .colophon {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 2rem;
   padding-top: 1.25rem;

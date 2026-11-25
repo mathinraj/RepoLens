@@ -115,7 +115,7 @@ the right questions for each.
 
 ## 🚀 Get it running
 
-1. Install RepoLens from the Chrome Web Store, or for development: open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick `RepoLens-extension/`.
+1. Download `repolens-<version>-chrome.zip` (or `-edge.zip`) from the [latest release](https://github.com/mathinraj/RepoLens/releases/latest) and unzip it. Open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked**, and pick the unzipped folder. For development, pick `RepoLens-extension/` instead. Chrome Web Store and Edge Add-ons listings are coming soon.
 2. The welcome page opens; click **Open Settings**, pick a provider, and paste its API key: [Anthropic](https://console.anthropic.com/settings/keys), [OpenAI](https://platform.openai.com/api-keys), or [Google Gemini](https://aistudio.google.com/app/apikey).
 3. Optionally add a **GitHub token** (see below).
 4. Open any [github.com](https://github.com) page and click the blue lens on the page, the toolbar icon → **Open RepoLens panel**, or press <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>. Ask away 🎉

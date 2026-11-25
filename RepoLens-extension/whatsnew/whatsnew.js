@@ -87,6 +87,20 @@
 
     $('update').classList.remove('is-hidden');
     $('update-title').textContent = `RepoLens v${update.version} is available`;
+
+    // Installed from a GitHub release zip (no store update_url): Chrome can't
+    // update it, so point at the download instead.
+    if (!chrome.runtime.getManifest().update_url) {
+      $('update-text').textContent =
+        'Download the new zip, unzip it over your RepoLens folder, then press the reload icon on RepoLens in chrome://extensions. Your keys and settings are kept.';
+      const btn = $('update-btn');
+      btn.textContent = 'Download';
+      btn.addEventListener('click', () => {
+        chrome.tabs.create({ url: update.url || `${RELEASES_URL}/latest` });
+      });
+      return;
+    }
+
     $('update-btn').addEventListener('click', async () => {
       const btn = $('update-btn');
       btn.disabled = true;
