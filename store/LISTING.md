@@ -31,44 +31,52 @@ The extension compares the latest GitHub release with the installed version to s
 **Summary** (from manifest, max 132 chars):
 > Ask AI about any GitHub repo, PR, file, or commit in a side panel. Bring your own Claude, ChatGPT (OpenAI), or Gemini key.
 
-**Category:** Developer Tools
+**Category:** Developer Tools (Productivity → Developer Tools)
 
 **Language:** English
 
 **Description:**
 
 ```
-Ever opened a giant pull request and thought "…what am I even looking at?"
+Ever opened a giant pull request and thought "what am I even looking at?"
 
-RepoLens rides along on github.com. When you land on a repository, pull request, file, or commit, a small lens button appears in the corner. Click it and a side panel opens that already knows what you're looking at — ready to summarize, explain, and dig in.
+RepoLens rides along on github.com. Open a repository, folder, pull request, file, or commit, and a small lens appears in the corner. Click it and a side panel opens that already knows what you're looking at, ready to summarize, explain, and dig in.
 
 WHAT YOU CAN ASK
-• Repositories — What does this repo do? What's the tech stack? Where are the entry points?
-• Pull requests — Summarize this PR. What's the risk? Does it touch auth, payments, or schemas? Are there enough tests?
-• Files — Explain this file. What depends on it? Any code-quality risks?
-• Commits — What changed and why? What's the scope of impact?
+• Repositories: What does this repo do? What's the tech stack? Where are the entry points?
+• Pull requests: Summarize this PR. What's the risk? Does it touch auth, payments, or schemas? Are there enough tests?
+• Files: Explain this file. What depends on it? Who owns it?
+• Commits: What changed, and why? How far does it reach?
 Tap a suggested question or type your own.
 
 TWO MODES
-• Instant — a fast answer from the page, diff, and README.
-• Deep — pulls changed files, review comments, linked issues, configs, and CODEOWNERS for a thorough answer.
+• Instant: a fast answer from the page, the diff, and the README.
+• Deep: also reads changed files, review comments, linked issues, configs, and CODEOWNERS for a thorough answer.
 
-BRING YOUR OWN KEY
-Choose your AI: Anthropic Claude, OpenAI (ChatGPT models), or Google Gemini. RepoLens uses your own API key, so usage is billed to your account with that provider and there is no RepoLens subscription. Switch providers or models from the side panel, or add more than one key and compare their answers side by side. Add an optional GitHub token for private repositories and higher GitHub API limits.
+YOUR AI, YOUR KEY
+• Works with Anthropic Claude, OpenAI (ChatGPT models), and Google Gemini. A free Gemini key works.
+• Pick the AI and model for each question right from the side panel.
+• Compare: add two or more keys and send one question to several AIs, then flip between their answers in tabs.
+• Usage is billed to your own account with each provider. No RepoLens account, no subscription.
+• Optional GitHub token for private repositories and higher GitHub limits.
+
+CONVERSATIONS THAT STICK
+• One conversation per repository, shared across its pages, and still there when you come back.
+• Prefer one history per page? Switch it in Settings.
 
 PRIVATE BY DESIGN
-• No RepoLens servers — the extension talks directly to GitHub and the AI provider you pick.
+• No RepoLens servers. The extension talks directly to GitHub and the AI you choose.
 • Your keys stay in this browser and are never synced.
-• No analytics, no tracking.
-• Page content is only read and sent when you ask a question.
+• Optional lock: require Touch ID or Windows Hello before keys can be viewed or changed.
+• Page content is read only when you ask a question. No analytics, no tracking.
 
 SETUP
-1. Install RepoLens — the welcome page opens and walks you through setup.
+1. Install RepoLens. A welcome page walks you through setup.
 2. Pick a provider and paste its API key (console.anthropic.com, platform.openai.com, or aistudio.google.com).
 3. Optionally add a GitHub token.
-4. Open any github.com page and click the lens (or press Ctrl/Cmd+Shift+L).
+4. Open any github.com page and click the lens, or press Ctrl/Cmd+Shift+L.
 
-Prefer a clean page? Hide the lens on one repo or everywhere from the toolbar popup; the toolbar icon and shortcut keep working.
+Prefer a clean page? Hide the lens on one repo or everywhere from the toolbar popup. The toolbar icon and shortcut keep working.
 
 RepoLens is an independent project and is not affiliated with or endorsed by GitHub, Anthropic, OpenAI, or Google.
 ```
@@ -87,9 +95,13 @@ RepoLens is an independent project and is not affiliated with or endorsed by Git
 
 Use public repositories in screenshots; don't show private or company code.
 
-**Official URL / Homepage:** `https://repolensio.vercel.app`
+**Official URL:** `repolensio.vercel.app` (appears only after the site is verified in Google Search Console with the developer account)
+
+**Homepage URL:** `https://repolensio.vercel.app`
 
 **Support URL:** `https://repolensio.vercel.app/feedback.html`
+
+**Mature content:** No
 
 ---
 
@@ -105,12 +117,17 @@ RepoLens answers the user's questions about the GitHub page they are viewing (a 
 | Permission | Justification |
 |---|---|
 | `sidePanel` | The extension's entire UI (suggested questions, answers, conversation) is shown in Chrome's side panel next to the GitHub page. |
-| `storage` | Stores the user's AI provider API key(s), optional GitHub token, preferences, and per-page conversation history locally on the device. |
+| `storage` | Stores the user's AI provider API key(s), optional GitHub token, preferences, and conversation history (per repository or per page) locally on the device. |
 | Host `https://github.com/*` | A content script detects the page type (repo, PR, file, commit) from the URL to show the RepoLens button and relevant questions, and reads the visible page content when the user asks a question. |
 | Host `https://api.github.com/*` | Fetches read-only repository context (README, PR diff, file contents, comments) for the page the user is asking about. |
 | Host `https://api.anthropic.com/*` | When the user selects Anthropic Claude, sends their question and page context to the Claude API with their own API key to generate the answer. |
 | Host `https://api.openai.com/*` | When the user selects OpenAI, sends their question and page context to the OpenAI API with their own API key to generate the answer. |
 | Host `https://generativelanguage.googleapis.com/*` | When the user selects Google Gemini, sends their question and page context to the Gemini API with their own API key to generate the answer. |
+
+**Host permission justification** (the dashboard asks for one combined answer):
+```
+RepoLens only works on GitHub and only talks to the services the user chooses. github.com: a content script detects the page type (repo, pull request, file, commit) from the URL to show the RepoLens button and relevant questions, and reads the visible page content only when the user asks a question. api.github.com: fetches read-only context for that page (README, diff, file contents, review comments), optionally with the user's own token, and checks GitHub Releases for RepoLens updates. api.anthropic.com, api.openai.com and generativelanguage.googleapis.com: when the user asks a question, RepoLens sends it with the page context to the AI provider(s) the user selected (Claude, ChatGPT, or Gemini), using the user's own API key. Each key is sent only to the provider that issued it. There is no RepoLens server, and no data goes anywhere else. Access is limited to these five hosts; RepoLens does not request access to other websites.
+```
 
 **Remote code:** `No, I am not using remote code.` (All JavaScript, including marked and DOMPurify, is bundled in the package.)
 
