@@ -25,7 +25,7 @@ All data RepoLens stores is kept in `chrome.storage.local` on your device. It is
 
 RepoLens sends data only to these services, and only to do what you asked:
 
-- **Your selected AI provider** receives your question plus the page and repository context needed to answer it, authenticated with your own API key. Only the provider you select in Preferences receives data, and its handling of that data is governed by its own terms:
+- **Your selected AI provider** receives your question plus the page and repository context needed to answer it, authenticated with your own API key. Only the provider you pick receives data (when you use Compare in the side panel, each provider you tick receives the same question and context), and each one's handling of that data is governed by its own terms:
   - Anthropic (`api.anthropic.com`): <https://www.anthropic.com/legal/privacy>
   - OpenAI (`api.openai.com`): <https://openai.com/policies/privacy-policy>
   - Google Gemini API (`generativelanguage.googleapis.com`): <https://ai.google.dev/gemini-api/terms> and <https://policies.google.com/privacy>. Note that Google may use data sent with free-tier Gemini API keys to improve its products; see Google's terms.

@@ -55,6 +55,23 @@
       btn.addEventListener('click', () => switchProvider(p.id));
       pickerEl.appendChild(btn);
     }
+    renderMultiCallout();
+  }
+
+  function renderMultiCallout() {
+    const withKeys = Object.values(PROVIDERS).filter((p) => drafts.keys[p.id]);
+    const callout = document.getElementById('multi-callout');
+    const title = document.getElementById('multi-title');
+    const text = document.getElementById('multi-text');
+    callout.classList.toggle('is-ready', withKeys.length >= 2);
+    if (withKeys.length >= 2) {
+      const names = withKeys.map((p) => p.short);
+      title.textContent = `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} are ready to use together`;
+      text.textContent = 'In the side panel, switch the AI for any question, or ask them all at once and compare their answers. The card selected here is the default.';
+    } else {
+      title.textContent = 'Add more than one key to use them together';
+      text.textContent = 'Every key you add stays saved. In the side panel you can then switch the AI for any question, or ask several at once and compare their answers. The card selected here is the default.';
+    }
   }
 
   function stashCurrent() {
@@ -174,8 +191,9 @@
 
   async function checkGitHub() {
     const token = tokenInput.value.trim();
+    document.getElementById('gh-how').open = !token;
     if (!token) {
-      setCheck('github', 'warn', 'Not set — public repos only, 60 GitHub requests per hour');
+      setCheck('github', 'warn', 'No token yet. Public repos work fine; add one for private repos.');
       return;
     }
     setCheck('github', 'pending', 'Checking…');

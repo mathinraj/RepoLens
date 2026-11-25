@@ -54,7 +54,7 @@ TWO MODES
 • Deep — pulls changed files, review comments, linked issues, configs, and CODEOWNERS for a thorough answer.
 
 BRING YOUR OWN KEY
-Choose your AI: Anthropic Claude, OpenAI (ChatGPT models), or Google Gemini. RepoLens uses your own API key, so usage is billed to your account with that provider and there is no RepoLens subscription. Switch providers or models any time. Add an optional GitHub token for private repositories and higher GitHub API limits.
+Choose your AI: Anthropic Claude, OpenAI (ChatGPT models), or Google Gemini. RepoLens uses your own API key, so usage is billed to your account with that provider and there is no RepoLens subscription. Switch providers or models from the side panel, or add more than one key and compare their answers side by side. Add an optional GitHub token for private repositories and higher GitHub API limits.
 
 PRIVATE BY DESIGN
 • No RepoLens servers — the extension talks directly to GitHub and the AI provider you pick.

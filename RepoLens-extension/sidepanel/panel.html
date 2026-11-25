@@ -81,6 +81,23 @@
     </section>
 
     <footer class="composer">
+      <div class="ai-bar">
+        <button type="button" id="ai-btn" class="ai-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="ai-menu">
+          <span id="ai-btn-label">AI</span>
+          <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+            <path fill="currentColor" d="M4.22 9.78a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 1 1-1.06 1.06L8 7.06 5.28 9.78a.75.75 0 0 1-1.06 0Z"/>
+          </svg>
+        </button>
+        <div id="ai-menu" class="ai-menu is-hidden" role="dialog" aria-label="Choose AI">
+          <div class="ai-seg" role="radiogroup" aria-label="Answer with">
+            <button type="button" role="radio" data-ai-mode="one">One AI</button>
+            <button type="button" role="radio" data-ai-mode="compare">Compare</button>
+          </div>
+          <p id="ai-hint" class="ai-hint"></p>
+          <ul id="ai-list" class="ai-list"></ul>
+          <button type="button" id="ai-settings" class="ai-settings">Manage keys in Settings</button>
+        </div>
+      </div>
       <form id="ask-form" class="ask-form" autocomplete="off">
         <textarea
           id="question-input"
@@ -105,6 +122,7 @@
     <script src="../shared/constants.js"></script>
     <script src="../shared/page-detector.js"></script>
     <script src="../shared/questions.js"></script>
+    <script src="../background/providers.js"></script>
     <script src="panel.js"></script>
   </body>
 </html>

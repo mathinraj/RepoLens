@@ -25,10 +25,10 @@
     }
     const s = res.status;
     if (s === 401 || (s === 400 && /api key not valid|invalid api key|api_key_invalid/i.test(detail))) {
-      return httpError(`${providerLabel} API key is invalid. Update it in RepoLens Preferences.`, 401);
+      return httpError(`${providerLabel} API key is invalid. Update it in RepoLens Settings.`, 401);
     }
     if (s === 403) return httpError(`${providerLabel} API key lacks permission. ${detail}`, s);
-    if (s === 404) return httpError(`Model not available for this ${providerLabel} key. Pick another in Preferences. ${detail}`, s);
+    if (s === 404) return httpError(`Model not available for this ${providerLabel} key. Pick another in Settings. ${detail}`, s);
     if (s === 429) {
       return /quota|billing|insufficient/i.test(detail)
         ? httpError(`${providerLabel} quota exceeded or billing not set up. ${detail}`, 402)

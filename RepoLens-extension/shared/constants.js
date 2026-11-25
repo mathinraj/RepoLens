@@ -23,6 +23,7 @@ const REPOLENS = {
     anthropic: {
       id: 'anthropic',
       label: 'Anthropic Claude',
+      short: 'Claude',
       apiBase: 'https://api.anthropic.com',
       defaultModel: 'claude-sonnet-4-6',
       keyPlaceholder: 'sk-ant-…',
@@ -34,6 +35,7 @@ const REPOLENS = {
     openai: {
       id: 'openai',
       label: 'OpenAI (ChatGPT models)',
+      short: 'ChatGPT',
       apiBase: 'https://api.openai.com',
       defaultModel: 'gpt-4.1',
       keyPlaceholder: 'sk-…',
@@ -45,6 +47,7 @@ const REPOLENS = {
     gemini: {
       id: 'gemini',
       label: 'Google Gemini',
+      short: 'Gemini',
       apiBase: 'https://generativelanguage.googleapis.com',
       defaultModel: 'gemini-2.5-flash',
       keyPlaceholder: 'AIza…',
@@ -76,6 +79,8 @@ const REPOLENS = {
     KEY_LOCK: 'repolensKeyLock',
     /** 'repo' (default): one conversation per repo; 'page': one per page */
     HISTORY_SCOPE: 'repolensHistoryScope',
+    /** { on: boolean, providers: [providerId, …] } for comparing answers in the panel */
+    COMPARE: 'repolensCompare',
   },
 
   /** When the popup asks for a store rating. */
@@ -126,6 +131,8 @@ const REPOLENS = {
     ASK_PROGRESS: 'REPOLENS_ASK_PROGRESS',
     ASK_DONE: 'REPOLENS_ASK_DONE',
     ASK_ERROR: 'REPOLENS_ASK_ERROR',
+    /** Sent once every provider in an ask has answered or failed */
+    ASK_FINISHED: 'REPOLENS_ASK_FINISHED',
     SCRAPE_PAGE: 'REPOLENS_SCRAPE_PAGE',
     PREFETCH_DONE: 'REPOLENS_PREFETCH_DONE',
     PANEL_HELLO: 'REPOLENS_PANEL_HELLO',

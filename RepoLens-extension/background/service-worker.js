@@ -440,15 +440,17 @@ chrome.runtime.onConnect.addListener((port) => {
 
   port.onMessage.addListener((message) => {
     if (!message || message.type !== MSG.ASK) return;
-    handleAskMessage(message, safeSend, controller.signal).catch((err) => {
-      if (aborted || err?.name === 'AbortError') return;
-      console.error('[RepoLens SW] ASK error:', err);
-      safeSend({
-        type: MSG.ASK_ERROR,
-        error: err?.message || String(err),
-        retryable: err?.retryable !== false,
-      });
-    });
+    handleAskMessage(message, safeSend, controller.signal)
+      .catch((err) => {
+        if (aborted || err?.name === 'AbortError') return;
+        console.error('[RepoLens SW] ASK error:', err);
+        safeSend({
+          type: MSG.ASK_ERROR,
+          error: err?.message || String(err),
+          retryable: err?.retryable !== false,
+        });
+      })
+      .finally(() => safeSend({ type: MSG.ASK_FINISHED }));
   });
 });
 
@@ -460,6 +462,29 @@ function maxTokensFor(providerId, mode) {
   return deep ? 16384 : 8192;
 }
 
+/**
+ * Providers to answer with. `message.targets` ([{ providerId, model? }]) comes
+ * from the panel's AI picker; without it, the provider chosen in Settings.
+ * Only providers with a saved key are used.
+ */
+function resolveTargets(message) {
+  const requested = Array.isArray(message.targets) && message.targets.length
+    ? message.targets
+    : [{ providerId: activeProvider().provider.id }];
+  const seen = new Set();
+  const targets = [];
+  for (const t of requested) {
+    const provider = PROVIDERS[t?.providerId];
+    if (!provider || seen.has(provider.id)) continue;
+    seen.add(provider.id);
+    const apiKey = stored[provider.keyStorage] || '';
+    if (!apiKey) continue;
+    const model = (typeof t.model === 'string' && t.model.trim()) || stored[provider.modelStorage] || provider.defaultModel;
+    targets.push({ provider, apiKey, model });
+  }
+  return targets;
+}
+
 async function handleAskMessage(message, safeSend, signal) {
   await prefsReady;
 
@@ -468,11 +493,12 @@ async function handleAskMessage(message, safeSend, signal) {
     safeSend({ type: MSG.ASK_ERROR, error: 'Question is empty.', retryable: false });
     return;
   }
-  const { provider, apiKey, model } = activeProvider();
-  if (!apiKey) {
+  const targets = resolveTargets(message);
+  if (!targets.length) {
+    const { provider } = activeProvider();
     safeSend({
       type: MSG.ASK_ERROR,
-      error: `Add your ${provider.label} API key in RepoLens Preferences (gear icon) to start asking.`,
+      error: `Add your ${provider.label} API key in RepoLens Settings (gear icon) to start asking.`,
       retryable: false,
       needsSetup: true,
     });
@@ -483,15 +509,22 @@ async function handleAskMessage(message, safeSend, signal) {
   const page = message.page || (typeof message.tabId === 'number' ? pageInfoByTab.get(message.tabId) : null) || {};
 
   const pageKey = makePageKey(page);
-  const cacheKey = message.cacheable && pageKey ? `${pageKey}:${mode}:${provider.id}:${model}:${question}` : null;
-  if (cacheKey) {
-    const hit = answerCache.get(cacheKey);
+  const cacheKeyFor = (t) =>
+    message.cacheable && pageKey ? `${pageKey}:${mode}:${t.provider.id}:${t.model}:${question}` : null;
+
+  // Serve cached answers first; only the rest need page and GitHub context.
+  const pending = [];
+  for (const t of targets) {
+    const key = cacheKeyFor(t);
+    const hit = key && answerCache.get(key);
     if (hit && Date.now() < hit.expiresAt) {
-      safeSend({ type: MSG.ASK_CHUNK, text: hit.value.answer });
-      safeSend({ type: MSG.ASK_DONE, meta: { ...hit.value.meta, cached: true } });
-      return;
+      safeSend({ type: MSG.ASK_CHUNK, providerId: t.provider.id, text: hit.value.answer });
+      safeSend({ type: MSG.ASK_DONE, providerId: t.provider.id, meta: { ...hit.value.meta, cached: true } });
+    } else {
+      pending.push(t);
     }
   }
+  if (!pending.length) return;
 
   let pageScrape = message.pageScrape || null;
   if (!pageScrape && typeof message.tabId === 'number') {
@@ -520,47 +553,57 @@ async function handleAskMessage(message, safeSend, signal) {
 
   // Port messages reset the service worker's 30s idle timer during long streams.
   let lastBeat = 0;
-  const result = await Providers.streamCompletion(
-    provider.id,
-    {
-      apiKey,
-      system,
-      messages,
-      maxTokens: maxTokensFor(provider.id, mode),
-      model,
-    },
-    {
-      signal,
-      onChunk: () => {
-        if (Date.now() - lastBeat > 5000) {
-          lastBeat = Date.now();
-          safeSend({ type: MSG.ASK_PROGRESS });
-        }
-      },
+  const onChunk = () => {
+    if (Date.now() - lastBeat > 5000) {
+      lastBeat = Date.now();
+      safeSend({ type: MSG.ASK_PROGRESS });
     }
-  );
+  };
 
-  if (!result.fullText.trim()) {
-    throw Object.assign(
-      new Error(`${provider.label} returned an empty answer (the model may have used its whole token budget on reasoning). Try again or pick another model.`),
-      { retryable: true }
+  async function answerWith({ provider, apiKey, model }) {
+    const result = await Providers.streamCompletion(
+      provider.id,
+      { apiKey, system, messages, maxTokens: maxTokensFor(provider.id, mode), model },
+      { signal, onChunk }
     );
+    if (!result.fullText.trim()) {
+      throw Object.assign(
+        new Error(`${provider.label} returned an empty answer (the model may have used its whole token budget on reasoning). Try again or pick another model.`),
+        { retryable: true }
+      );
+    }
+    const answer = sanitizeAnswer(result.fullText);
+    const meta = { model: result.model, provider: provider.id, mode, hasGithubContext: Boolean(githubContext), contextError, cached: false };
+    const cacheKey = cacheKeyFor({ provider, model });
+    if (cacheKey) {
+      if (answerCache.size > 200) answerCache.clear();
+      answerCache.set(cacheKey, { value: { answer, meta }, expiresAt: Date.now() + ANSWER_CACHE_TTL });
+    }
+    safeSend({ type: MSG.ASK_CHUNK, providerId: provider.id, text: answer });
+    safeSend({ type: MSG.ASK_DONE, providerId: provider.id, meta });
   }
 
-  const answer = sanitizeAnswer(result.fullText);
-  const meta = { model: result.model, provider: provider.id, mode, hasGithubContext: Boolean(githubContext), contextError, cached: false };
+  const settled = await Promise.allSettled(pending.map(async (t) => {
+    try {
+      await answerWith(t);
+    } catch (err) {
+      if (err?.name === 'AbortError') throw err;
+      safeSend({
+        type: MSG.ASK_ERROR,
+        providerId: t.provider.id,
+        error: err?.message || String(err),
+        retryable: err?.retryable !== false,
+      });
+      throw err;
+    }
+  }));
 
-  if (cacheKey) {
-    if (answerCache.size > 200) answerCache.clear();
-    answerCache.set(cacheKey, { value: { answer, meta }, expiresAt: Date.now() + ANSWER_CACHE_TTL });
+  // One question counts once toward the rate prompt, however many AIs answered.
+  if (settled.some((s) => s.status === 'fulfilled')) {
+    chrome.storage.local.get(STORAGE.ANSWER_COUNT).then((s) => {
+      chrome.storage.local.set({ [STORAGE.ANSWER_COUNT]: (s[STORAGE.ANSWER_COUNT] || 0) + 1 });
+    });
   }
-
-  chrome.storage.local.get(STORAGE.ANSWER_COUNT).then((s) => {
-    chrome.storage.local.set({ [STORAGE.ANSWER_COUNT]: (s[STORAGE.ANSWER_COUNT] || 0) + 1 });
-  });
-
-  if (answer && !safeSend({ type: MSG.ASK_CHUNK, text: answer })) return;
-  safeSend({ type: MSG.ASK_DONE, meta });
 }
 
 async function requestPageScrape(tabId) {

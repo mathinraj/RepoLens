@@ -105,6 +105,7 @@ the right questions for each.
 - **⚡ Answers stream live** — first words in under a second, no spinner-staring.
 - **🎚️ Two gears** — *Instant* for a quick read of the page, *Enhanced* for full-repo depth (related files, PR comments, linked issues, ownership).
 - **💬 Chips or free-text** — tap a suggested question or ask your own.
+- **⚖️ Pick or compare AIs** — switch provider and model from the side panel, or, with two or more keys, send one question to several AIs and flip between their answers.
 - **🔐 Bring your own key, no servers** — talks directly to GitHub and your chosen AI provider (Claude, ChatGPT, or Gemini) from your browser. Keys never leave your machine except to those APIs.
 - **🪶 Stays out of the way** — a side panel that sits *beside* your code, not on top of it.
 

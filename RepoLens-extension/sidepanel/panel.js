@@ -171,6 +171,233 @@
 
   settingsBtn.addEventListener('click', openPreferences);
 
+  // ─── AI picker: one AI for chat, or compare several ─────────────────────────
+  const { PROVIDERS, DEFAULT_PROVIDER } = globalThis.REPOLENS;
+  const aiBtn = document.getElementById('ai-btn');
+  const aiBtnLabel = document.getElementById('ai-btn-label');
+  const aiMenu = document.getElementById('ai-menu');
+  const aiList = document.getElementById('ai-list');
+  const aiHint = document.getElementById('ai-hint');
+  const aiSegEl = aiMenu.querySelector('.ai-seg');
+  const aiSegBtns = aiMenu.querySelectorAll('[data-ai-mode]');
+
+  const ai = { provider: DEFAULT_PROVIDER, keys: {}, models: {}, compare: { on: false, providers: [] } };
+  /** providerId → [{ id, label }] once fetched for the model menus */
+  const modelLists = {};
+  const AI_KEYS = [
+    STORAGE.PROVIDER,
+    STORAGE.COMPARE,
+    ...Object.values(PROVIDERS).flatMap((p) => [p.keyStorage, p.modelStorage]),
+  ];
+
+  const keyedProviders = () => Object.values(PROVIDERS).filter((p) => ai.keys[p.id]);
+  const modelOf = (id) => ai.models[id] || PROVIDERS[id].defaultModel;
+  const shortName = (id) => PROVIDERS[id]?.short || id;
+
+  function compareIds() {
+    const keyed = keyedProviders().map((p) => p.id);
+    const chosen = ai.compare.providers.filter((id) => keyed.includes(id));
+    return chosen.length >= 2 ? chosen : keyed;
+  }
+
+  const comparing = () => ai.compare.on && keyedProviders().length >= 2;
+
+  /** The Settings provider, or the first one with a key if that one has none. */
+  function chatProvider() {
+    if (ai.keys[ai.provider]) return ai.provider;
+    return keyedProviders()[0]?.id || ai.provider;
+  }
+
+  /** What the next question is sent to. */
+  function currentTargets() {
+    const ids = comparing() ? compareIds() : [chatProvider()];
+    return ids.map((id) => ({ providerId: id, model: modelOf(id) }));
+  }
+
+  function joinNames(ids) {
+    const names = ids.map(shortName);
+    return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+  }
+
+  function renderAiButton() {
+    if (!keyedProviders().length) {
+      aiBtnLabel.textContent = 'Add an API key';
+      inputEl.placeholder = 'Ask about this page…';
+      return;
+    }
+    if (comparing()) {
+      const ids = compareIds();
+      aiBtnLabel.textContent = `Compare · ${ids.length} AIs`;
+      inputEl.placeholder = `Ask ${joinNames(ids)}…`;
+      return;
+    }
+    const id = chatProvider();
+    aiBtnLabel.textContent = `${shortName(id)} · ${modelOf(id)}`;
+    inputEl.placeholder = 'Ask about this page…';
+  }
+
+  function modelSelect(p) {
+    const select = document.createElement('select');
+    select.className = 'ai-model';
+    select.setAttribute('aria-label', `${p.short} model`);
+    const add = (value, text) => {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = text;
+      select.appendChild(opt);
+    };
+    add('', `Default · ${p.defaultModel}`);
+    const saved = ai.models[p.id];
+    const listed = (modelLists[p.id] || []).filter((m) => m.id !== p.defaultModel);
+    if (saved && saved !== p.defaultModel && !listed.some((m) => m.id === saved)) add(saved, saved);
+    for (const m of listed) add(m.id, m.id);
+    select.value = saved && saved !== p.defaultModel ? saved : '';
+    select.addEventListener('change', () => {
+      chrome.storage.local.set({ [p.modelStorage]: select.value }).catch(() => {});
+    });
+    return select;
+  }
+
+  function renderAiMenu() {
+    const keyed = keyedProviders();
+    const missing = Object.values(PROVIDERS).filter((p) => !ai.keys[p.id]);
+    const several = keyed.length >= 2;
+    const compare = comparing();
+
+    // The One AI / Compare switch only means something with two or more keys.
+    aiSegEl.classList.toggle('is-hidden', !several);
+    aiSegBtns.forEach((btn) => {
+      const on = (btn.dataset.aiMode === 'compare') === compare;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-checked', String(on));
+    });
+
+    if (!several) aiHint.textContent = `Pick the ${shortName(keyed[0].id)} model for your questions.`;
+    else if (compare) aiHint.textContent = 'Each question goes to every AI you tick, and each one bills its own key.';
+    else aiHint.textContent = 'Pick the AI and model for your next questions.';
+
+    const chosen = compare ? compareIds() : [chatProvider()];
+    const rows = keyed.map((p) => {
+      const li = document.createElement('li');
+      li.className = 'ai-row';
+      const label = document.createElement('label');
+      label.className = 'ai-pick';
+      if (several) {
+        const input = document.createElement('input');
+        input.type = compare ? 'checkbox' : 'radio';
+        input.name = 'ai-pick';
+        input.value = p.id;
+        input.checked = chosen.includes(p.id);
+        input.addEventListener('change', () => onPick(p.id, input));
+        label.appendChild(input);
+      }
+      const name = document.createElement('span');
+      name.className = 'ai-name';
+      name.textContent = p.short;
+      label.appendChild(name);
+      li.append(label, modelSelect(p));
+      return li;
+    });
+
+    if (missing.length) {
+      const li = document.createElement('li');
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'ai-add';
+      add.innerHTML = '<span class="ai-add-icon" aria-hidden="true">+</span>';
+      const text = document.createElement('span');
+      text.textContent = `Add ${joinNames(missing.map((p) => p.id)).replace(' and ', ' or ')}`;
+      const sub = document.createElement('small');
+      sub.textContent = several ? 'Use every AI you have a key for' : 'Switch AIs or compare their answers';
+      text.appendChild(sub);
+      add.appendChild(text);
+      add.addEventListener('click', openPreferences);
+      li.appendChild(add);
+      rows.push(li);
+    }
+    aiList.replaceChildren(...rows);
+  }
+
+  function onPick(id, input) {
+    if (!comparing()) {
+      chrome.storage.local.set({ [STORAGE.PROVIDER]: id }).catch(() => {});
+      return;
+    }
+    let ids = compareIds().filter((x) => x !== id);
+    if (input.checked) ids.push(id);
+    if (ids.length < 2) {
+      input.checked = true;
+      aiHint.textContent = 'Compare needs at least two AIs.';
+      return;
+    }
+    ids = Object.keys(PROVIDERS).filter((x) => ids.includes(x));
+    chrome.storage.local.set({ [STORAGE.COMPARE]: { on: true, providers: ids } }).catch(() => {});
+  }
+
+  aiSegBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const on = btn.dataset.aiMode === 'compare';
+      chrome.storage.local.set({ [STORAGE.COMPARE]: { ...ai.compare, on } }).catch(() => {});
+    });
+  });
+
+  function loadModelLists() {
+    for (const p of keyedProviders()) {
+      if (modelLists[p.id]) continue;
+      modelLists[p.id] = [];
+      globalThis.RepoLensProviders.listModels(p.id, ai.keys[p.id])
+        .then((models) => {
+          modelLists[p.id] = models;
+          if (!aiMenu.classList.contains('is-hidden')) renderAiMenu();
+        })
+        .catch(() => { delete modelLists[p.id]; });
+    }
+  }
+
+  function setAiMenu(open) {
+    if (open && !keyedProviders().length) {
+      openPreferences();
+      return;
+    }
+    aiMenu.classList.toggle('is-hidden', !open);
+    aiBtn.setAttribute('aria-expanded', String(open));
+    if (open) {
+      renderAiMenu();
+      loadModelLists();
+    }
+  }
+
+  aiBtn.addEventListener('click', () => setAiMenu(aiMenu.classList.contains('is-hidden')));
+  document.getElementById('ai-settings').addEventListener('click', openPreferences);
+  document.addEventListener('pointerdown', (e) => {
+    if (!aiMenu.classList.contains('is-hidden') && !aiMenu.contains(e.target) && !aiBtn.contains(e.target)) setAiMenu(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !aiMenu.classList.contains('is-hidden')) {
+      setAiMenu(false);
+      aiBtn.focus();
+    }
+  });
+
+  async function loadAi() {
+    const s = await chrome.storage.local.get(AI_KEYS).catch(() => ({}));
+    ai.provider = PROVIDERS[s[STORAGE.PROVIDER]] ? s[STORAGE.PROVIDER] : DEFAULT_PROVIDER;
+    for (const p of Object.values(PROVIDERS)) {
+      if (ai.keys[p.id] !== (s[p.keyStorage] || '')) delete modelLists[p.id];
+      ai.keys[p.id] = s[p.keyStorage] || '';
+      ai.models[p.id] = typeof s[p.modelStorage] === 'string' ? s[p.modelStorage] : '';
+    }
+    const c = s[STORAGE.COMPARE] || {};
+    ai.compare = { on: Boolean(c.on), providers: Array.isArray(c.providers) ? c.providers : [] };
+    renderAiButton();
+    if (!aiMenu.classList.contains('is-hidden')) renderAiMenu();
+  }
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && Object.keys(changes).some((k) => AI_KEYS.includes(k))) loadAi();
+  });
+  loadAi();
+
   // ─── Page identity ──────────────────────────────────────────────────────────
   function pageIdentity(page) {
     if (!page) return '';
@@ -369,6 +596,12 @@
     }
     el.appendChild(q);
 
+    if (turn.compare && Array.isArray(turn.results)) {
+      const built = buildCompareAnswer(turn);
+      el.appendChild(built.answerEl);
+      return { el, bodyEl: built.bodyEl, answerEl: built.answerEl };
+    }
+
     const answer = document.createElement('div');
     answer.className = 'turn-answer';
 
@@ -415,6 +648,95 @@
     return { el, bodyEl: body, answerEl: answer };
   }
 
+  const activeResult = (turn) => turn.results.find((r) => r.providerId === turn.active) || turn.results[0];
+
+  /** Tabs, one per AI, and the selected AI's answer underneath. */
+  function buildCompareAnswer(turn) {
+    const answer = document.createElement('div');
+    answer.className = 'turn-answer is-compare';
+
+    const tabs = document.createElement('div');
+    tabs.className = 'compare-tabs';
+    tabs.setAttribute('role', 'tablist');
+    const current = activeResult(turn);
+    for (const r of turn.results) {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'compare-tab' + (r === current ? ' is-active' : '');
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', String(r === current));
+      tab.title = r.meta?.model || r.model || '';
+      const dot = document.createElement('span');
+      dot.className = `tab-dot is-${r.status}`;
+      dot.setAttribute('aria-hidden', 'true');
+      tab.append(dot, shortName(r.providerId));
+      tab.addEventListener('click', () => {
+        if (turn.active === r.providerId) return;
+        turn.active = r.providerId;
+        if (turn.status !== 'pending') saveThread();
+        rerenderTurn(turn);
+      });
+      tabs.appendChild(tab);
+    }
+    answer.appendChild(tabs);
+
+    if (turn.mode === MODES.DEEP && current.status === 'done') {
+      const badge = document.createElement('div');
+      badge.className = 'enhanced-badge';
+      badge.textContent = 'Deep — full context used';
+      answer.appendChild(badge);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'answer-body';
+    answer.appendChild(body);
+
+    if (current.status === 'pending') {
+      body.innerHTML =
+        '<div class="progress"><span></span><span></span><span></span>' +
+        `<em>${escapeHtml(shortName(current.providerId))} is ${turn.mode === MODES.DEEP ? 'reading the full context' : 'answering'}</em></div>`;
+    } else if (current.status === 'error') {
+      body.innerHTML = `<div class="answer-error">${escapeHtml(current.error || 'Something went wrong.')}</div>`;
+      if (turn.status !== 'pending') {
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'retry-btn';
+        retry.textContent = `Retry with ${shortName(current.providerId)}`;
+        retry.addEventListener('click', () => askQuestion(turn.question, {
+          fromChip: true,
+          forceMode: turn.mode,
+          targets: [{ providerId: current.providerId, model: current.model }],
+        }));
+        answer.appendChild(retry);
+      }
+    } else {
+      body.innerHTML = renderMarkdown(current.answer || '');
+      answer.appendChild(buildActions({
+        ...turn,
+        answer: current.answer,
+        compareTargets: turn.results.map((r) => ({ providerId: r.providerId, model: r.model })),
+      }));
+      const line = metaLine(current.meta, turn.mode);
+      if (line) {
+        const meta = document.createElement('div');
+        meta.className = 'answer-meta';
+        meta.textContent = line;
+        answer.appendChild(meta);
+      }
+    }
+    return { answerEl: answer, bodyEl: body };
+  }
+
+  function rerenderTurn(turn, { type = false } = {}) {
+    const old = convoEl.querySelector(`.turn[data-turn-id="${CSS.escape(turn.id)}"]`);
+    if (!old) return;
+    const { el, bodyEl } = buildTurnEl(turn);
+    el.classList.add('no-enter');
+    old.replaceWith(el);
+    const text = turn.compare ? activeResult(turn).answer : turn.answer;
+    if (type && text) typeAnswer(bodyEl, text);
+  }
+
   function buildActions(turn) {
     const row = document.createElement('div');
     row.className = 'answer-actions';
@@ -444,7 +766,7 @@
       deepen.disabled = isAsking;
       deepen.addEventListener('click', () => {
         setMode(MODES.DEEP);
-        askQuestion(turn.question, { fromChip: true, forceMode: MODES.DEEP });
+        askQuestion(turn.question, { fromChip: true, forceMode: MODES.DEEP, targets: turn.compareTargets });
       });
       row.appendChild(deepen);
     }
@@ -464,8 +786,9 @@
     for (const turn of thread) {
       const { el, bodyEl } = buildTurnEl(turn);
       convoEl.appendChild(el);
-      if (animateId && turn.id === animateId && turn.status === 'done' && turn.answer) {
-        typeAnswer(bodyEl, turn.answer);
+      const text = turn.compare && turn.results ? activeResult(turn).answer : turn.answer;
+      if (animateId && turn.id === animateId && turn.status === 'done' && text) {
+        typeAnswer(bodyEl, text);
       }
     }
     scrollToBottom();
@@ -519,27 +842,38 @@
   }
 
   function retryTurn(turn) {
-    // Remove the errored turn, then re-ask.
+    // Remove the errored turn, then re-ask the same AI(s).
     thread = thread.filter((t) => t.id !== turn.id);
-    askQuestion(turn.question, { fromChip: true, forceMode: turn.mode });
+    const targets = turn.compare && turn.results
+      ? turn.results.map((r) => ({ providerId: r.providerId, model: r.model }))
+      : turn.providerId ? [{ providerId: turn.providerId, model: modelOf(turn.providerId) }] : undefined;
+    askQuestion(turn.question, { fromChip: true, forceMode: turn.mode, targets });
   }
 
-  function askQuestion(question, { fromChip = false, forceMode } = {}) {
+  function askQuestion(question, { fromChip = false, forceMode, targets } = {}) {
     const q = (question || '').trim();
     if (!q || isAsking) return;
 
     const mode = forceMode || currentMode;
     if (!fromChip) inputEl.value = '';
 
+    const asked = targets && targets.length ? targets : currentTargets();
+    const compare = asked.length > 1;
     const turn = {
       id: newId(),
       question: q,
       mode,
       pageLabel: currentPage?.label || '',
+      providerId: asked[0].providerId,
       answer: '',
       meta: null,
       status: 'pending',
     };
+    if (compare) {
+      turn.compare = true;
+      turn.results = asked.map((t) => ({ providerId: t.providerId, model: t.model, status: 'pending', answer: '', meta: null }));
+      turn.active = asked[0].providerId;
+    }
     thread.push(turn);
     renderThread();
     setAsking(true);
@@ -555,12 +889,53 @@
 
     const port = chrome.runtime.connect({ name: 'repolens-ask' });
     askPort = port;
-    let streamed = '';
+    /** providerId → streamed text ('_' when the worker didn't name a provider) */
+    const streamed = {};
+    const textFor = (pid) => streamed[pid] || '';
+    const resultFor = (pid) => turn.results?.find((r) => r.providerId === pid);
+    let settled = false;
+
+    // Compare turns stay pending until every AI has answered or failed; each
+    // answer is shown as it lands, and the first one to land is selected.
+    const landResult = (r) => {
+      const isFirst = !turn.results.some((x) => x !== r && x.status === 'done');
+      if (isFirst && r.status === 'done') turn.active = r.providerId;
+      if (thread.some((t) => t.id === turn.id)) {
+        rerenderTurn(turn, { type: r.status === 'done' && turn.active === r.providerId });
+      }
+    };
 
     const finalize = (status, extra = {}) => {
+      if (settled) return;
+      settled = true;
+      if (compare) {
+        for (const r of turn.results) {
+          if (r.status !== 'pending') continue;
+          if (textFor(r.providerId)) {
+            r.status = 'done';
+            r.answer = textFor(r.providerId);
+            r.meta = r.meta || {};
+          } else {
+            r.status = 'error';
+            r.error = extra.error || 'No answer arrived.';
+          }
+        }
+        status = turn.results.some((r) => r.status === 'done') ? 'done' : 'error';
+        if (activeResult(turn).status !== 'done') {
+          const done = turn.results.find((r) => r.status === 'done');
+          if (done) turn.active = done.providerId;
+        }
+        if (status === 'error') {
+          extra = {
+            ...extra,
+            error: turn.results.map((r) => `${shortName(r.providerId)}: ${r.error}`).join('\n'),
+            retryable: true,
+          };
+        }
+      }
       turn.status = status;
-      if (status === 'done') {
-        turn.answer = extra.answer || streamed;
+      if (status === 'done' && !compare) {
+        turn.answer = extra.answer || textFor(turn.providerId) || textFor('_');
         turn.meta = extra.meta || {};
       } else if (status === 'error') {
         turn.error = extra.error || 'Ask failed';
@@ -579,7 +954,9 @@
       if (turnInThread) {
         if (status === 'done') {
           saveThread();
-          renderThread(turn.id);
+          // A compare turn has already typed its first answer as it landed.
+          if (compare) rerenderTurn(turn);
+          else renderThread(turn.id);
         } else {
           renderThread();
         }
@@ -601,30 +978,46 @@
     };
 
     port.onMessage.addListener((msg) => {
-      if (!msg || !msg.type) return;
+      if (!msg || !msg.type || settled) return;
+      const pid = msg.providerId || '_';
       if (msg.type === MSG.ASK_CHUNK) {
-        if (typeof msg.text === 'string') streamed += msg.text;
+        if (typeof msg.text === 'string') streamed[pid] = textFor(pid) + msg.text;
         return;
       }
       if (msg.type === MSG.ASK_DONE) {
-        finalize('done', { answer: streamed, meta: msg.meta });
+        const r = resultFor(msg.providerId);
+        if (!compare) finalize('done', { answer: textFor(pid), meta: msg.meta });
+        else if (r) {
+          Object.assign(r, { status: 'done', answer: textFor(pid), meta: msg.meta || {} });
+          landResult(r);
+        }
         return;
       }
       if (msg.type === MSG.ASK_ERROR) {
-        finalize('error', { error: msg.error, retryable: msg.retryable, needsSetup: msg.needsSetup });
+        const extra = { error: msg.error, retryable: msg.retryable, needsSetup: msg.needsSetup };
+        const r = resultFor(msg.providerId);
+        if (!compare) finalize('error', extra);
+        else if (r) {
+          Object.assign(r, { status: 'error', error: msg.error || 'Ask failed' });
+          landResult(r);
+        } else {
+          finalize('error', extra);
+        }
+        return;
+      }
+      if (msg.type === MSG.ASK_FINISHED) {
+        if (compare || Object.values(streamed).some(Boolean)) finalize('done');
+        else finalize('error', { error: 'No answer arrived.', retryable: true });
       }
     });
 
     port.onDisconnect.addListener(() => {
       if (askPort === port) askPort = null;
-      if (turn.status === 'pending') {
-        if (streamed) {
-          finalize('done', { answer: streamed, meta: {} });
-        } else {
-          const err = chrome.runtime.lastError?.message;
-          finalize('error', { error: err || 'Connection closed.', retryable: true });
-        }
-      }
+      if (settled) return;
+      const err = chrome.runtime.lastError?.message;
+      const anyText = Object.values(streamed).some(Boolean);
+      if (compare || anyText) finalize('done', { error: err || 'Connection closed.' });
+      else finalize('error', { error: err || 'Connection closed.', retryable: true });
     });
 
     const cacheable = fromChip && isStaticQuestion(q, currentPage?.type);
@@ -635,6 +1028,7 @@
       page: currentPage,
       tabId: activeTabId,
       cacheable,
+      targets: asked,
     });
   }
 
