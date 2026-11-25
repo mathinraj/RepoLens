@@ -59,8 +59,9 @@
     drafts.models[providerId] = selectedModelValue();
   }
 
-  function switchProvider(id) {
+  async function switchProvider(id) {
     if (id === providerId) return;
+    if (!(await requireUnlock())) return;
     stashCurrent();
     providerId = id;
     applyProvider();
@@ -225,13 +226,175 @@
 
   recheckBtn.addEventListener('click', runChecks);
 
-  document.querySelectorAll('.reveal-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const input = document.getElementById(btn.dataset.target);
-      const show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      btn.textContent = show ? 'Hide' : 'Show';
+  const revealButtons = document.querySelectorAll('.reveal-btn');
+
+  function setRevealed(btn, show) {
+    document.getElementById(btn.dataset.target).type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Hide' : 'Show';
+  }
+
+  revealButtons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const show = document.getElementById(btn.dataset.target).type === 'password';
+      if (show && !(await requireUnlock())) return;
+      setRevealed(btn, show);
     });
+  });
+
+  // ─── Touch ID / Windows Hello key lock ──────────────────────────────────────
+  const KeyLock = globalThis.RepoLensKeyLock;
+  const RELOCK_AFTER_MS = 5 * 60 * 1000;
+  const lockToggle = document.getElementById('key-lock-toggle');
+  const lockMsg = document.getElementById('key-lock-msg');
+  const lockReset = document.getElementById('key-lock-reset');
+  const lockBar = document.getElementById('lock-bar');
+  const lockBarText = document.getElementById('lock-bar-text');
+  const lockBarBtn = document.getElementById('lock-bar-btn');
+  const secretInputs = [keyInput, tokenInput];
+
+  let lockCredential = null;
+  let unlocked = false;
+  let relockTimer = 0;
+  let verifying = null;
+
+  const isLocked = () => Boolean(lockCredential) && !unlocked;
+
+  document.querySelectorAll('.auth-name').forEach((el) => { el.textContent = KeyLock.authName(); });
+
+  function showLockMsg(text, ok = false) {
+    lockMsg.textContent = text;
+    lockMsg.classList.toggle('is-ok', ok);
+    lockMsg.classList.toggle('is-hidden', !text);
+  }
+
+  function applyLockUi() {
+    const locked = isLocked();
+    for (const input of secretInputs) {
+      input.readOnly = locked;
+      input.classList.toggle('is-locked', locked);
+    }
+    if (locked) revealButtons.forEach((btn) => setRevealed(btn, false));
+
+    lockBar.classList.toggle('is-hidden', !lockCredential);
+    lockBar.classList.toggle('is-unlocked', !locked);
+    lockBarText.textContent = locked
+      ? `Keys are locked with ${KeyLock.authName()}.`
+      : 'Keys unlocked. They lock again after 5 minutes without activity.';
+    lockBarBtn.textContent = locked ? 'Unlock' : 'Lock now';
+    lockToggle.checked = Boolean(lockCredential);
+    lockReset.classList.toggle('is-hidden', !lockCredential);
+  }
+
+  function relock() {
+    clearTimeout(relockTimer);
+    unlocked = false;
+    applyLockUi();
+  }
+
+  function touchActivity() {
+    if (!unlocked || !lockCredential) return;
+    clearTimeout(relockTimer);
+    relockTimer = setTimeout(relock, RELOCK_AFTER_MS);
+  }
+
+  ['pointerdown', 'keydown', 'input'].forEach((type) => document.addEventListener(type, touchActivity, true));
+
+  /** Resolves true when the lock is off, already unlocked, or the user verifies. */
+  async function requireUnlock({ fresh = false } = {}) {
+    if (!lockCredential || (unlocked && !fresh)) return true;
+    if (verifying) return verifying;
+    verifying = (async () => {
+      try {
+        await KeyLock.verify(lockCredential);
+        unlocked = true;
+        showLockMsg('');
+        touchActivity();
+        return true;
+      } catch (err) {
+        showLockMsg(KeyLock.friendlyError(err));
+        return false;
+      } finally {
+        verifying = null;
+        applyLockUi();
+      }
+    })();
+    return verifying;
+  }
+
+  lockBarBtn.addEventListener('click', () => (isLocked() ? requireUnlock() : relock()));
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[STORAGE.KEY_LOCK]) return;
+    const next = changes[STORAGE.KEY_LOCK].newValue?.credentialId || null;
+    if (next === lockCredential) return;
+    lockCredential = next;
+    unlocked = false;
+    applyLockUi();
+  });
+
+  // Locked inputs are read-only; trying to edit one asks to unlock first.
+  for (const input of secretInputs) {
+    const unlockThenFocus = async () => {
+      if (isLocked() && (await requireUnlock())) input.focus();
+    };
+    input.addEventListener('click', unlockThenFocus);
+    input.addEventListener('keydown', (e) => {
+      if (!isLocked() || e.key === 'Tab' || e.key === 'Shift' || e.metaKey || e.ctrlKey) return;
+      e.preventDefault();
+      unlockThenFocus();
+    });
+    input.addEventListener('paste', (e) => {
+      if (!isLocked()) return;
+      e.preventDefault();
+      unlockThenFocus();
+    });
+  }
+
+  lockToggle.addEventListener('change', async () => {
+    const wantOn = lockToggle.checked;
+    lockToggle.checked = Boolean(lockCredential);
+    lockToggle.disabled = true;
+    try {
+      if (wantOn) {
+        if (!(await KeyLock.isAvailable())) {
+          showLockMsg(`${KeyLock.authName()} isn't available on this device. RepoLens needs a built-in fingerprint, face, or PIN sign-in (Touch ID or Windows Hello).`);
+          return;
+        }
+        showLockMsg(`Waiting for ${KeyLock.authName()}…`, true);
+        lockCredential = await KeyLock.enable();
+        unlocked = true;
+        touchActivity();
+        showLockMsg(`Lock is on. Keys now need ${KeyLock.authName()} to view or change.`, true);
+      } else {
+        if (!(await requireUnlock({ fresh: true }))) return;
+        await KeyLock.disable();
+        lockCredential = null;
+        unlocked = false;
+        clearTimeout(relockTimer);
+        showLockMsg('Lock is off.', true);
+      }
+    } catch (err) {
+      showLockMsg(KeyLock.friendlyError(err));
+    } finally {
+      lockToggle.disabled = false;
+      applyLockUi();
+    }
+  });
+
+  // Recovery when the OS credential is gone (e.g. Windows Hello was reset):
+  // anyone can clear the keys, but nobody can read them without verifying.
+  lockReset.addEventListener('click', async () => {
+    const ok = window.confirm('Remove all saved API keys and the GitHub token, and turn the lock off? You will need to paste your keys again.');
+    if (!ok) return;
+    const remove = [STORAGE.KEY_LOCK, STORAGE.GITHUB_TOKEN, ...Object.values(PROVIDERS).map((p) => p.keyStorage)];
+    await chrome.storage.local.remove(remove);
+    lockCredential = null;
+    unlocked = false;
+    await loadPrefs();
+    applyProvider();
+    applyLockUi();
+    showLockMsg('Keys removed and lock turned off.', true);
+    runChecks();
   });
 
   // ─── On-page lens (saved immediately, not by "Save preferences") ────────────
@@ -274,7 +437,9 @@
 
   (async function init() {
     await loadPrefs();
+    lockCredential = await KeyLock.credentialId();
     applyProvider();
+    applyLockUi();
     await runChecks();
   })();
 })();

@@ -136,6 +136,7 @@ Everything lives on the Preferences page (gear icon in the panel):
 | Model | — | Per provider. Defaults: `claude-sonnet-4-6`, `gpt-4.1`, `gemini-2.5-flash`. Lists the models your key can use |
 | Pre-fetch | — | Warms GitHub context as you browse (needs a token) |
 | On-page lens | — | Show or hide the floating lens everywhere, and un-hide repos you hid from the popup |
+| Key lock | — | Require Touch ID / Windows Hello before keys are shown or changed, or providers switched. Guards the page only; keys aren't encrypted |
 
 <sub>\* Without a token RepoLens works on public repos using GitHub's anonymous limit of 60 requests per hour. A Deep answer uses roughly 10–25 requests. Use a [fine-grained token](https://github.com/settings/personal-access-tokens/new) with read-only *Contents*, *Pull requests*, *Issues* and *Metadata*.</sub>
 

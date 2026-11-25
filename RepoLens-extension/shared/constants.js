@@ -72,6 +72,8 @@ const REPOLENS = {
     LENS_HIDDEN: 'repolensLensHidden',
     /** { rated: true } or { remindAt: epoch ms } */
     RATE_PROMPT: 'repolensRatePrompt',
+    /** { credentialId, enabledAt } while the Touch ID / Windows Hello key lock is on */
+    KEY_LOCK: 'repolensKeyLock',
   },
 
   /** When the popup asks for a store rating. */

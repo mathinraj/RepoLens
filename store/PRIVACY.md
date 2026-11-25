@@ -14,7 +14,8 @@ RepoLens is a Chrome extension that answers questions about the GitHub page you 
 | Questions you type | To answer them | Sent to your selected AI provider |
 | Your AI provider API key(s) and optional GitHub token | To call those services on your behalf | Stored in your browser; each key is sent only to the service that issued it |
 | Conversation history (your questions and answers, up to 30 per page) | So answers are still there when you come back to a page | Stored in your browser only |
-| Preferences (provider, model, mode, pre-fetch toggle) | To remember your settings | Stored in your browser only |
+| Preferences (provider, model, mode, pre-fetch toggle, where the on-page lens is hidden) | To remember your settings | Stored in your browser only |
+| Key lock credential ID (only if you turn on Touch ID / Windows Hello protection) | To ask your device to verify it's you before keys are shown or changed | Stored in your browser only. Verification is done by your operating system; RepoLens never receives your fingerprint, face, or PIN |
 
 ## Where data is stored
 
@@ -46,6 +47,7 @@ The pages show you those diagnostics, and you can untick them before sending. No
 
 - **Clear a conversation:** use the **Clear** button in the side panel.
 - **Remove credentials:** delete them on the RepoLens Preferences page and save.
+- **Key lock:** optionally require Touch ID or Windows Hello before keys are shown or changed on the Preferences page. It protects the page, not the stored data: keys are not encrypted.
 - **Delete everything:** uninstall the extension; Chrome deletes all of its stored data.
 - **Revoke access:** revoke your AI key with its provider ([Anthropic](https://console.anthropic.com/settings/keys), [OpenAI](https://platform.openai.com/api-keys), [Google AI Studio](https://aistudio.google.com/app/apikey)) or the GitHub token at <https://github.com/settings/tokens>.
 

@@ -42,6 +42,14 @@
       </section>
 
       <section class="card">
+        <div class="lock-bar is-hidden" id="lock-bar" role="status">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path fill="currentColor" d="M4 7V5a4 4 0 1 1 8 0v2h.5c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5v-5C2 7.67 2.67 7 3.5 7H4Zm1.5 0h5V5a2.5 2.5 0 0 0-5 0v2Z"/>
+          </svg>
+          <span id="lock-bar-text"></span>
+          <button type="button" id="lock-bar-btn" class="lock-bar-btn"></button>
+        </div>
+
         <div class="field">
           <span class="field-label">AI provider</span>
           <p class="hint">Keys for each provider are kept, so you can switch any time.</p>
@@ -79,6 +87,29 @@
           Keys are stored only in this browser (never synced). Each key is sent only to its own
           service: <code>api.anthropic.com</code>, <code>api.openai.com</code>,
           <code>generativelanguage.googleapis.com</code>, or <code>api.github.com</code>.
+        </p>
+      </section>
+
+      <section class="card section-gap">
+        <div class="field-row">
+          <div>
+            <label for="key-lock-toggle">Protect keys with <span class="auth-name">Touch ID / Windows Hello</span></label>
+            <p class="hint">
+              Asks for <span class="auth-name">Touch ID / Windows Hello</span> before showing, changing, or removing a key,
+              switching providers, or turning this off. Asking questions never needs it.
+            </p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="key-lock-toggle" />
+            <span class="slider" aria-hidden="true"></span>
+          </label>
+        </div>
+        <p class="lock-msg is-hidden" id="key-lock-msg" role="status"></p>
+        <p class="privacy-note">
+          This stops someone using your unlocked browser from viewing or changing your keys here.
+          It doesn't encrypt them: they are still stored unencrypted on this device, like other browser data.
+          Your fingerprint or face never leaves your device.
+          <button type="button" id="key-lock-reset" class="link-btn is-hidden">Can't verify? Remove all keys and turn the lock off</button>
         </p>
       </section>
 
@@ -141,6 +172,7 @@
     <script src="../shared/constants.js"></script>
     <script src="../shared/support.js"></script>
     <script src="../shared/lens.js"></script>
+    <script src="key-lock.js"></script>
     <script src="../background/github.js"></script>
     <script src="../background/providers.js"></script>
     <script src="options.js"></script>

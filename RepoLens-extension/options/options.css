@@ -403,6 +403,67 @@ select option {
   .provider-picker { grid-template-columns: 1fr; }
 }
 
+/* Key lock */
+.lock-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 2px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.lock-bar span { color: var(--fg); }
+.lock-bar.is-unlocked { border-color: var(--border); background: var(--bg); color: var(--muted); }
+.lock-bar.is-unlocked span { color: var(--muted); font-weight: 500; }
+
+.lock-bar-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.lock-bar.is-unlocked .lock-bar-btn { background: var(--surface); color: var(--accent); border-color: var(--border); }
+
+input.is-locked { cursor: pointer; color: var(--muted); }
+
+.lock-msg {
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+  font-size: 12.5px;
+}
+
+.lock-msg.is-ok { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); }
+
+.link-btn {
+  display: block;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .repo-list {
   list-style: none;
   margin: 0;
