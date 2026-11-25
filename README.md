@@ -135,6 +135,7 @@ Everything lives on the Settings page (gear icon in the panel or popup), and cha
 | GitHub token | — * | Private repos, higher API limits, code search in Deep mode, background pre-fetch |
 | Model | — | Per provider. Defaults: `claude-sonnet-4-6`, `gpt-4.1`, `gemini-2.5-flash`. Lists the models your key can use |
 | Pre-fetch | — | Warms GitHub context as you browse (needs a token) |
+| Conversation per repo | — | On by default: every page of a repo (home, folders, files, PRs) shares one history; each repo keeps its own. Turn off for one history per page |
 | On-page lens | — | Show or hide the floating lens everywhere, and un-hide repos you hid from the popup |
 | Key lock | — | Require Touch ID / Windows Hello before keys are shown or changed, or providers switched. Guards the page only; keys aren't encrypted |
 

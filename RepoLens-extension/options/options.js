@@ -421,6 +421,27 @@
     runChecks();
   });
 
+  // ─── Conversation history scope ─────────────────────────────────────────────
+  const scopeToggle = document.getElementById('history-scope-toggle');
+  const scopeHint = document.getElementById('history-scope-hint');
+
+  function renderScopeHint() {
+    scopeHint.textContent = scopeToggle.checked
+      ? 'Questions on any page of a repo (home, folders, files, PRs) share one history. Each repo keeps its own.'
+      : 'Each page (a PR, a file, a folder) keeps its own history.';
+  }
+
+  chrome.storage.local.get(STORAGE.HISTORY_SCOPE).then((s) => {
+    scopeToggle.checked = s[STORAGE.HISTORY_SCOPE] !== 'page';
+    renderScopeHint();
+  });
+
+  scopeToggle.addEventListener('change', async () => {
+    renderScopeHint();
+    await chrome.storage.local.set({ [STORAGE.HISTORY_SCOPE]: scopeToggle.checked ? 'repo' : 'page' });
+    toast('Saved');
+  });
+
   // ─── On-page lens ───────────────────────────────────────────────────────────
   const Lens = globalThis.RepoLensLens;
   const lensToggle = document.getElementById('lens-toggle');

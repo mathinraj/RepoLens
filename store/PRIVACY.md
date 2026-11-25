@@ -13,7 +13,7 @@ RepoLens is a Chrome extension that answers questions about the GitHub page you 
 | Repository data from the GitHub API (README, diffs, file contents, comments, CODEOWNERS) | To give the AI accurate context for your question | Fetched from `api.github.com`, then sent to your selected AI provider with your question |
 | Questions you type | To answer them | Sent to your selected AI provider |
 | Your AI provider API key(s) and optional GitHub token | To call those services on your behalf | Stored in your browser; each key is sent only to the service that issued it |
-| Conversation history (your questions and answers, up to 30 per page) | So answers are still there when you come back to a page | Stored in your browser only |
+| Conversation history (your questions and answers, up to 30 per repository, or per page if you choose that in Settings) | So answers are still there when you come back | Stored in your browser only |
 | Preferences (provider, model, mode, pre-fetch toggle, where the on-page lens is hidden) | To remember your settings | Stored in your browser only |
 | Key lock credential ID (only if you turn on Touch ID / Windows Hello protection) | To ask your device to verify it's you before keys are shown or changed | Stored in your browser only. Verification is done by your operating system; RepoLens never receives your fingerprint, face, or PIN |
 

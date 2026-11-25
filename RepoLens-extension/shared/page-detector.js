@@ -28,7 +28,7 @@
     {
       // Repo home (and optionally tree root). Excludes known GitHub namespaces.
       type: TYPES.REPO,
-      regex: /^\/([^/]+)\/([^/]+)(?:\/(?:tree\/[^/]+)?\/?)?$/,
+      regex: /^\/([^/]+)\/([^/]+)(?:\/.*)?$/,
       excludeOrgs: new Set([
         'settings',
         'orgs',
@@ -124,21 +124,21 @@
           continue;
         }
         // Skip repo sub-pages we don't handle yet (issues, actions, etc.)
-        // Tree root (/org/repo/tree/branch) is allowed as repo context.
+        // Tree pages (/org/repo/tree/branch[/folder]) use repo context.
         const remainder = path.slice(`/${org}/${repo}`.length);
-        if (
-          remainder &&
-          !/^\/?$/.test(remainder) &&
-          !/^\/tree\/[^/]+\/?$/.test(remainder)
-        ) {
+        const tree = remainder.match(/^\/tree\/[^/]+(?:\/(.+))?$/);
+        if (remainder && !/^\/?$/.test(remainder) && !tree) {
           continue;
         }
+        // Branch names may contain "/", so the folder is a best guess for display only.
+        const folder = tree && tree[1] ? tree[1] : '';
         return {
           type: TYPES.REPO,
           org,
           repo,
+          ...(folder ? { folder } : {}),
           url,
-          label: `${org}/${repo}`,
+          label: folder ? `${org}/${repo}/${folder}` : `${org}/${repo}`,
         };
       }
     }
@@ -163,7 +163,20 @@
     return page.label || 'RepoLens';
   }
 
-  const api = { detectPage, formatPageBadge };
+  /**
+   * The repo a github.com path belongs to, for any page inside it (including
+   * issues, actions, and other pages detectPage reports as unknown).
+   * @returns {{ org: string, repo: string } | null}
+   */
+  function repoFromPath(pathname) {
+    const m = String(pathname || '').match(/^\/([^/]+)\/([^/?#]+)/);
+    if (!m) return null;
+    const excluded = PATTERNS.find((p) => p.type === TYPES.REPO).excludeOrgs;
+    if (excluded.has(m[1])) return null;
+    return { org: m[1], repo: m[2] };
+  }
+
+  const api = { detectPage, formatPageBadge, repoFromPath };
 
   root.RepoLensPageDetector = api;
 

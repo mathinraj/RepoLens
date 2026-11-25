@@ -35,6 +35,11 @@ const cases = [
     expect: { type: 'repo', org: 'gotomarket-engageoptmz', repo: 'qbdtipdservice' },
   },
   {
+    name: 'folder in a repo uses repo context',
+    path: '/mathinraj/RepoLens/tree/main/docs/assets',
+    expect: { type: 'repo', org: 'mathinraj', repo: 'RepoLens', folder: 'docs/assets', label: 'mathinraj/RepoLens/docs/assets' },
+  },
+  {
     name: 'PR conversation',
     path: '/gotomarket-engageoptmz/qbdtipdservice/pull/852',
     expect: {
@@ -84,6 +89,24 @@ const cases = [
 ];
 
 let failed = 0;
+
+const { repoFromPath } = global.RepoLensPageDetector;
+const repoCases = [
+  ['/acme/widget/issues/12', 'acme/widget'],
+  ['/acme/widget/tree/main/docs', 'acme/widget'],
+  ['/settings/profile', null],
+  ['/', null],
+];
+for (const [p, want] of repoCases) {
+  const r = repoFromPath(p);
+  const got = r ? `${r.org}/${r.repo}` : null;
+  if (got !== want) {
+    failed += 1;
+    console.error(`FAIL: repoFromPath(${p}) expected ${want}, got ${got}`);
+  } else {
+    console.log(`ok  - repoFromPath ${p}`);
+  }
+}
 
 for (const test of cases) {
   const result = detectPage(test.path);

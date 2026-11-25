@@ -74,6 +74,8 @@ const REPOLENS = {
     RATE_PROMPT: 'repolensRatePrompt',
     /** { credentialId, enabledAt } while the Touch ID / Windows Hello key lock is on */
     KEY_LOCK: 'repolensKeyLock',
+    /** 'repo' (default): one conversation per repo; 'page': one per page */
+    HISTORY_SCOPE: 'repolensHistoryScope',
   },
 
   /** When the popup asks for a store rating. */

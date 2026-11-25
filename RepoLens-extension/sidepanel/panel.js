@@ -3,8 +3,9 @@
  * (persisted via chrome.storage.local), streaming progress, and mode toggle.
  */
 (function () {
-  const { MSG, PAGE_TYPES, MODES } = globalThis.REPOLENS;
+  const { MSG, PAGE_TYPES, MODES, STORAGE } = globalThis.REPOLENS;
   const { getQuestionChips, STATIC_QUESTIONS } = globalThis.RepoLensQuestions;
+  const { repoFromPath } = globalThis.RepoLensPageDetector;
 
   const badgeEl = document.getElementById('page-badge');
   const labelEl = document.getElementById('page-label');
@@ -45,6 +46,11 @@
   let inFlightTurn = null;
   /** @type {string|null} storage key of the page where the in-flight ask started */
   let inFlightPageKey = null;
+  /** 'repo': one conversation per repo; 'page': one per page */
+  let historyScope = 'repo';
+  const historyScopeReady = chrome.storage.local.get(STORAGE.HISTORY_SCOPE).then((s) => {
+    if (s[STORAGE.HISTORY_SCOPE] === 'page') historyScope = 'page';
+  }).catch(() => {});
 
   // ─── Toggle: keep-alive port so the SW can close the panel on toolbar click ──
   try {
@@ -176,10 +182,28 @@
       }
       return `${page.org}/${page.repo}`;
     }
-    return page.label || page.url || '';
+    return pagePath(page);
+  }
+
+  function pagePath(page) {
+    try {
+      return new URL(page.url).pathname;
+    } catch {
+      return '';
+    }
+  }
+
+  function repoOf(page) {
+    if (!page) return null;
+    if (page.org && page.repo) return { org: page.org, repo: page.repo };
+    return repoFromPath(pagePath(page));
   }
 
   function keyFor(page) {
+    if (historyScope === 'repo') {
+      const r = repoOf(page);
+      if (r) return `${STORAGE_PREFIX}${r.org}/${r.repo}`.toLowerCase();
+    }
     const id = pageIdentity(page);
     return id ? STORAGE_PREFIX + id : null;
   }
@@ -193,8 +217,16 @@
       return;
     }
     try {
-      const stored = await chrome.storage.local.get([key]);
+      // Repo-home history from before repo-wide history used the repo's original casing.
+      const r = historyScope === 'repo' ? repoOf(page) : null;
+      const legacyKey = r ? `${STORAGE_PREFIX}${r.org}/${r.repo}` : null;
+      const stored = await chrome.storage.local.get(legacyKey && legacyKey !== key ? [key, legacyKey] : [key]);
       thread = Array.isArray(stored[key]) ? stored[key] : [];
+      if (!thread.length && legacyKey !== key && Array.isArray(stored[legacyKey])) {
+        thread = stored[legacyKey];
+        await chrome.storage.local.set({ [key]: thread });
+        await chrome.storage.local.remove(legacyKey);
+      }
     } catch {
       thread = [];
     }
@@ -328,6 +360,13 @@
     qText.className = 'q-text';
     qText.textContent = turn.question;
     q.appendChild(qText);
+    // In a repo-wide conversation, show which page each question was asked on.
+    if (historyScope === 'repo' && turn.pageLabel) {
+      const where = document.createElement('div');
+      where.className = 'q-page';
+      where.textContent = turn.pageLabel;
+      q.appendChild(where);
+    }
     el.appendChild(q);
 
     const answer = document.createElement('div');
@@ -496,6 +535,7 @@
       id: newId(),
       question: q,
       mode,
+      pageLabel: currentPage?.label || '',
       answer: '',
       meta: null,
       status: 'pending',
@@ -619,11 +659,12 @@
   });
 
   // ─── Page info loading ──────────────────────────────────────────────────────
-  async function switchToPage(page, signals) {
+  async function switchToPage(page, signals, { force = false } = {}) {
+    await historyScopeReady;
     const prevKey = storageKey;
     const nextKey = keyFor(page);
     renderPage(page, signals);
-    if (nextKey !== prevKey) {
+    if (force || nextKey !== prevKey) {
       await loadThread(page);
       if (inFlightTurn && inFlightPageKey === nextKey) {
         const alreadyPresent = thread.some((t) => t.id === inFlightTurn.id);
@@ -662,6 +703,12 @@
       currentPage.signals = { ...(currentPage.signals || {}), ...message.signals };
       renderChips(getQuestionChips(currentPage.type, currentPage));
     }
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[STORAGE.HISTORY_SCOPE]) return;
+    historyScope = changes[STORAGE.HISTORY_SCOPE].newValue === 'page' ? 'page' : 'repo';
+    switchToPage(currentPage, null, { force: true });
   });
 
   if (globalThis.marked?.setOptions) {
