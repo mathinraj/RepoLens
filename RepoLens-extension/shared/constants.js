@@ -68,7 +68,49 @@ const REPOLENS = {
     LATEST_RELEASE: 'repolensLatestRelease',
     /** { from, to, seen } set when the extension updates */
     WHATS_NEW: 'repolensWhatsNew',
+    /** { all: boolean, repos: ['org/repo', …] } — where the on-page lens is hidden */
+    LENS_HIDDEN: 'repolensLensHidden',
+    /** { rated: true } or { remindAt: epoch ms } */
+    RATE_PROMPT: 'repolensRatePrompt',
   },
+
+  /** When the popup asks for a store rating. */
+  RATE: {
+    MIN_ANSWERS: 10,
+    MIN_DAYS: 3,
+    REMIND_DAYS: 14,
+  },
+
+  /**
+   * "More from the developer" in the popup. Bundled (never fetched remotely)
+   * so store reviewers see exactly what ships.
+   */
+  MORE_APPS: [
+    {
+      name: 'TouchLock',
+      desc: 'Lock your browser with Touch ID, Windows Hello, or a PIN',
+      url: 'https://touchlock.vercel.app',
+      icon: 'icons/apps/touchlock.png',
+    },
+    {
+      name: 'SpendTrak',
+      desc: 'Privacy-first expense tracker that syncs with Google Drive',
+      url: 'https://spendtrak.vercel.app',
+      icon: 'icons/apps/spendtrak.png',
+    },
+    {
+      name: 'Bing it',
+      desc: 'Smart auto-searcher with human-like typing',
+      url: 'https://bingit.vercel.app',
+      icon: 'icons/apps/bingit.png',
+    },
+    {
+      name: 'AutoPrompt for Copilot',
+      desc: 'Batch prompts for Copilot, with 5,700+ built in',
+      url: 'https://auto-prompt-for-copilot.vercel.app',
+      icon: 'icons/apps/autoprompt.png',
+    },
+  ],
 
   /** Message types exchanged between content script, panel, and service worker */
   MSG: {

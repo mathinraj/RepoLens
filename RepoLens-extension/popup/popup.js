@@ -2,8 +2,10 @@
  * RepoLens toolbar popup — page status, open/close the side panel, settings.
  */
 (function () {
-  const { MSG, STORAGE, PROVIDERS, DEFAULT_PROVIDER, HOST, PAGE_TYPES } = globalThis.REPOLENS;
+  const { MSG, STORAGE, PROVIDERS, DEFAULT_PROVIDER, HOST, PAGE_TYPES, RATE, MORE_APPS } = globalThis.REPOLENS;
   const { detectPage } = globalThis.RepoLensPageDetector;
+  const Lens = globalThis.RepoLensLens;
+  const Support = globalThis.RepoLensSupport;
 
   const PANEL_PATH = 'sidepanel/panel.html';
 
@@ -55,7 +57,7 @@
     if (whatsNew && !whatsNew.seen) show(`What's new in v${whatsNew.to}`);
   }
 
-  renderNotice().catch(() => {});
+  const noticeShown = renderNotice().catch(() => {});
 
   function openSettings() {
     chrome.runtime.openOptionsPage();
@@ -157,6 +159,108 @@
     return hasKey;
   }
 
+  // ─── On-page lens visibility ──────────────────────────────────────────────
+  const lensHintEl = document.getElementById('lens-hint');
+  const lensButtons = document.querySelectorAll('[data-lens]');
+
+  async function renderLens() {
+    const page = currentPage();
+    const key = Lens.repoKey(page);
+    const state = Lens.stateFor(await Lens.get(), page);
+
+    lensButtons.forEach((btn) => {
+      const active = btn.dataset.lens === state;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-checked', String(active));
+      btn.disabled = btn.dataset.lens === 'repo' && !key;
+    });
+    if (state === 'all') lensHintEl.textContent = 'Hidden on every page';
+    else if (state === 'repo') lensHintEl.textContent = `Hidden on ${key}`;
+    else lensHintEl.textContent = key ? `Shown on ${key}` : 'Shown on GitHub pages';
+  }
+
+  lensButtons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      await Lens.choose(btn.dataset.lens, currentPage());
+      renderLens();
+    });
+  });
+
+  // ─── Rate prompt ──────────────────────────────────────────────────────────
+  const rateEl = document.getElementById('rate-prompt');
+
+  async function renderRate() {
+    const s = await chrome.storage.local.get([STORAGE.ANSWER_COUNT, STORAGE.INSTALLED_AT, STORAGE.RATE_PROMPT]);
+    const ask = Support.shouldAskForRating({
+      answers: s[STORAGE.ANSWER_COUNT] || 0,
+      installedAt: s[STORAGE.INSTALLED_AT] || 0,
+      prompt: s[STORAGE.RATE_PROMPT] || null,
+    });
+    // One prompt at a time: an update / What's new notice wins.
+    await noticeShown;
+    const noticeVisible = !document.getElementById('notice').classList.contains('is-hidden');
+    rateEl.classList.toggle('is-hidden', !ask || noticeVisible);
+  }
+
+  document.getElementById('rate-now').addEventListener('click', async () => {
+    await chrome.storage.local.set({ [STORAGE.RATE_PROMPT]: { rated: true } });
+    chrome.tabs.create({ url: Support.reviewUrl() });
+    window.close();
+  });
+
+  document.getElementById('rate-later').addEventListener('click', async () => {
+    const remindAt = Date.now() + RATE.REMIND_DAYS * 86_400_000;
+    await chrome.storage.local.set({ [STORAGE.RATE_PROMPT]: { remindAt } });
+    rateEl.classList.add('is-hidden');
+  });
+
+  // ─── More from the developer ──────────────────────────────────────────────
+  const moreBtn = document.getElementById('more-btn');
+  const moreEl = document.getElementById('more-apps');
+  const moreList = document.getElementById('more-list');
+
+  for (const app of MORE_APPS) {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.className = 'more-app';
+    a.href = app.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    const icon = document.createElement('img');
+    icon.src = chrome.runtime.getURL(app.icon);
+    icon.alt = '';
+    icon.width = 28;
+    icon.height = 28;
+    const text = document.createElement('span');
+    text.className = 'more-text';
+    const name = document.createElement('span');
+    name.className = 'more-name';
+    name.textContent = app.name;
+    const desc = document.createElement('span');
+    desc.className = 'more-desc';
+    desc.textContent = app.desc;
+    text.append(name, desc);
+    a.append(icon, text);
+    li.appendChild(a);
+    moreList.appendChild(li);
+  }
+
+  moreBtn.addEventListener('click', () => {
+    const open = !moreEl.classList.toggle('is-hidden');
+    moreBtn.setAttribute('aria-expanded', String(open));
+    moreBtn.classList.toggle('is-active', open);
+  });
+
+  function currentPage() {
+    try {
+      const url = new URL(tab?.url || '');
+      if (url.hostname === HOST) return detectPage(url.pathname);
+    } catch {
+      // not a GitHub tab
+    }
+    return null;
+  }
+
   async function renderShortcut() {
     try {
       const commands = await chrome.commands.getAll();
@@ -179,5 +283,7 @@
       setPrimary('Add API key', openSettings);
     }
     renderShortcut();
+    renderLens();
+    renderRate();
   })();
 })();

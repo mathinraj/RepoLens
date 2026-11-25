@@ -68,6 +68,8 @@ SETUP
 3. Optionally add a GitHub token.
 4. Open any github.com page and click the lens (or press Ctrl/Cmd+Shift+L).
 
+Prefer a clean page? Hide the lens on one repo or everywhere from the toolbar popup; the toolbar icon and shortcut keep working.
+
 RepoLens is an independent project and is not affiliated with or endorsed by GitHub, Anthropic, OpenAI, or Google.
 ```
 

@@ -119,7 +119,7 @@ the right questions for each.
 3. Optionally add a **GitHub token** (see below).
 4. Open any [github.com](https://github.com) page and click the blue lens on the page, the toolbar icon → **Open RepoLens panel**, or press <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>. Ask away 🎉
 
-The toolbar popup also shows which AI provider and model are active, and has a **Settings** button.
+The toolbar popup also shows which AI provider and model are active, lets you hide the on-page lens on the current repo or everywhere, and has a **Settings** button.
 
 <br>
 
@@ -135,6 +135,7 @@ Everything lives on the Preferences page (gear icon in the panel):
 | GitHub token | — * | Private repos, higher API limits, code search in Deep mode, background pre-fetch |
 | Model | — | Per provider. Defaults: `claude-sonnet-4-6`, `gpt-4.1`, `gemini-2.5-flash`. Lists the models your key can use |
 | Pre-fetch | — | Warms GitHub context as you browse (needs a token) |
+| On-page lens | — | Show or hide the floating lens everywhere, and un-hide repos you hid from the popup |
 
 <sub>\* Without a token RepoLens works on public repos using GitHub's anonymous limit of 60 requests per hour. A Deep answer uses roughly 10–25 requests. Use a [fine-grained token](https://github.com/settings/personal-access-tokens/new) with read-only *Contents*, *Pull requests*, *Issues* and *Metadata*.</sub>
 

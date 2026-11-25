@@ -3,7 +3,7 @@
  * Never include API keys, tokens, repository names, questions, or answers here.
  */
 (function (root) {
-  const { SITE_URL, STORAGE, PROVIDERS, DEFAULT_PROVIDER, STORE } = root.REPOLENS;
+  const { SITE_URL, REPO_URL, STORAGE, PROVIDERS, DEFAULT_PROVIDER, STORE, RATE } = root.REPOLENS;
 
   function browser() {
     const ua = navigator.userAgent;
@@ -57,5 +57,28 @@
     return `${SITE_URL}/uninstall.html?${params}`;
   }
 
-  root.RepoLensSupport = { feedbackUrl, uninstallUrl };
+  /**
+   * Ask for a rating after RATE.MIN_ANSWERS answers and RATE.MIN_DAYS installed;
+   * never again once rated, and not before a "Later" reminder date.
+   */
+  function shouldAskForRating({ answers = 0, installedAt = 0, prompt = null }, now = Date.now()) {
+    if (prompt?.rated) return false;
+    if (prompt?.remindAt && now < prompt.remindAt) return false;
+    if (answers < RATE.MIN_ANSWERS || !installedAt) return false;
+    return now - installedAt >= RATE.MIN_DAYS * 86_400_000;
+  }
+
+  /**
+   * Store reviews page for this install. Store builds carry update_url and their
+   * runtime id is the listing id; unpacked builds fall back to the GitHub repo.
+   */
+  function reviewUrl() {
+    if (!chrome.runtime.getManifest().update_url) return REPO_URL;
+    const id = chrome.runtime.id;
+    return STORE === 'edge'
+      ? `https://microsoftedge.microsoft.com/addons/detail/${id}`
+      : `https://chromewebstore.google.com/detail/${id}/reviews`;
+  }
+
+  root.RepoLensSupport = { feedbackUrl, uninstallUrl, shouldAskForRating, reviewUrl };
 })(globalThis);

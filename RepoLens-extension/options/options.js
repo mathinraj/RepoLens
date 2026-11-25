@@ -234,6 +234,38 @@
     });
   });
 
+  // ─── On-page lens (saved immediately, not by "Save preferences") ────────────
+  const Lens = globalThis.RepoLensLens;
+  const lensToggle = document.getElementById('lens-toggle');
+  const lensRepos = document.getElementById('lens-repos');
+  const lensReposHint = document.getElementById('lens-repos-hint');
+
+  async function renderLens() {
+    const { all, repos } = await Lens.get();
+    lensToggle.checked = !all;
+    lensReposHint.textContent = repos.length
+      ? (all ? 'Kept for when you turn the lens back on.' : 'The lens stays hidden on these repos.')
+      : 'None. Hide the lens on a repo from the toolbar popup.';
+    lensRepos.replaceChildren(...repos.map((repo) => {
+      const li = document.createElement('li');
+      const name = document.createElement('code');
+      name.textContent = repo;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'repo-show-btn';
+      btn.textContent = 'Show lens';
+      btn.addEventListener('click', () => Lens.setRepo(repo, false));
+      li.append(name, btn);
+      return li;
+    }));
+  }
+
+  lensToggle.addEventListener('change', () => Lens.setAll(!lensToggle.checked));
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[STORAGE.LENS_HIDDEN]) renderLens();
+  });
+  renderLens();
+
   document.getElementById('privacy-link').href = `${SITE_URL}/privacy.html`;
   const feedbackLink = document.getElementById('feedback-link');
   const refreshFeedbackLink = () => globalThis.RepoLensSupport.feedbackUrl().then((url) => { feedbackLink.href = url; });

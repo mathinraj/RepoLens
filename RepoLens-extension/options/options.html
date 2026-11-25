@@ -107,6 +107,24 @@
         </div>
       </section>
 
+      <section class="card section-gap">
+        <div class="field-row">
+          <div>
+            <label for="lens-toggle">Show the on-page lens</label>
+            <p class="hint">The floating lens button on github.com. The toolbar icon and keyboard shortcut work either way. Applies right away.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="lens-toggle" />
+            <span class="slider" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="field">
+          <span class="field-label">Hidden on these repos</span>
+          <p class="hint" id="lens-repos-hint">Hide the lens on a repo from the toolbar popup.</p>
+          <ul class="repo-list" id="lens-repos"></ul>
+        </div>
+      </section>
+
       <footer class="foot">
         <span id="status" class="status" role="status"></span>
         <button type="button" id="save-btn" class="save-btn">Save preferences</button>
@@ -122,6 +140,7 @@
 
     <script src="../shared/constants.js"></script>
     <script src="../shared/support.js"></script>
+    <script src="../shared/lens.js"></script>
     <script src="../background/github.js"></script>
     <script src="../background/providers.js"></script>
     <script src="options.js"></script>

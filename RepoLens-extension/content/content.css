@@ -10,6 +10,10 @@
   pointer-events: none;
 }
 
+#repolens-root.repolens-hidden {
+  display: none !important;
+}
+
 #repolens-root * {
   box-sizing: border-box;
 }

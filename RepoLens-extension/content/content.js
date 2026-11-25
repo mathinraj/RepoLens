@@ -2,13 +2,16 @@
  * RepoLens content script — page detection + floating overlay button.
  */
 (function () {
-  const { MSG, PAGE_TYPES } = globalThis.REPOLENS;
+  const { MSG, PAGE_TYPES, STORAGE } = globalThis.REPOLENS;
   const { detectPage, formatPageBadge } = globalThis.RepoLensPageDetector;
+  const Lens = globalThis.RepoLensLens;
 
   const ROOT_ID = 'repolens-root';
   let currentPage = null;
   let lastPath = null;
   let contextInvalid = false;
+  let lensHidden = Lens.normalize(null);
+  let lensLoaded = false;
 
   function isContextValid() {
     try {
@@ -66,9 +69,16 @@
     return root;
   }
 
+  function applyVisibility() {
+    const root = document.getElementById(ROOT_ID);
+    if (!root || !currentPage) return;
+    root.classList.toggle('repolens-hidden', Lens.stateFor(lensHidden, currentPage) !== 'shown');
+  }
+
   function updateUi(page) {
     currentPage = page;
     const root = ensureRoot();
+    applyVisibility();
     const tooltip = root.querySelector('.repolens-tooltip');
     const badge = root.querySelector('.repolens-badge');
     const button = root.querySelector('.repolens-fab');
@@ -136,7 +146,7 @@
   }
 
   function refresh(force = false) {
-    if (!isContextValid()) return;
+    if (!isContextValid() || !lensLoaded) return;
     const path = window.location.pathname;
     if (!force && path === lastPath) return;
     lastPath = path;
@@ -272,6 +282,18 @@
   // Soft polling catches edge cases where events don't fire
   window.setInterval(() => refresh(), 1000);
 
-  // Initial inject
-  refresh(true);
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[STORAGE.LENS_HIDDEN] || !isContextValid()) return;
+    lensHidden = Lens.normalize(changes[STORAGE.LENS_HIDDEN].newValue);
+    applyVisibility();
+  });
+
+  // Read the hide setting before the first inject so a hidden lens never flashes.
+  Lens.get()
+    .then((value) => { lensHidden = value; })
+    .catch(() => {})
+    .finally(() => {
+      lensLoaded = true;
+      refresh(true);
+    });
 })();

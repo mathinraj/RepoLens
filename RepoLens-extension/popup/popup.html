@@ -57,6 +57,29 @@
       </li>
     </ul>
 
+    <section class="lens" aria-labelledby="lens-title">
+      <div class="lens-head">
+        <span id="lens-title" class="lens-title">On-page lens</span>
+        <span id="lens-hint" class="lens-hint"></span>
+      </div>
+      <div class="segmented" role="radiogroup" aria-labelledby="lens-title">
+        <button type="button" role="radio" data-lens="shown">Show</button>
+        <button type="button" role="radio" data-lens="repo">Hide on repo</button>
+        <button type="button" role="radio" data-lens="all">Hide everywhere</button>
+      </div>
+    </section>
+
+    <section id="rate-prompt" class="rate is-hidden" aria-live="polite">
+      <div class="rate-text">
+        <strong>Enjoying RepoLens?</strong>
+        <span>A quick rating helps other developers find it.</span>
+      </div>
+      <div class="rate-actions">
+        <button type="button" id="rate-now" class="rate-btn">Rate now</button>
+        <button type="button" id="rate-later" class="rate-btn is-quiet">Later</button>
+      </div>
+    </section>
+
     <footer class="foot">
       <button type="button" id="settings-btn" class="settings-btn">
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
@@ -68,11 +91,24 @@
       <span class="foot-links">
         <a id="help-link" class="help-link" href="#" target="_blank" rel="noopener">Help</a>
         <a id="feedback-link" class="help-link" href="#" target="_blank" rel="noopener">Feedback</a>
+        <button type="button" id="more-btn" class="more-btn" aria-expanded="false" aria-controls="more-apps" title="More from the developer">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle cx="3" cy="8" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+            <circle cx="13" cy="8" r="1.5" fill="currentColor"/>
+          </svg>
+        </button>
       </span>
     </footer>
 
+    <section id="more-apps" class="more is-hidden" aria-labelledby="more-title">
+      <div id="more-title" class="more-title">More from the developer</div>
+      <ul id="more-list" class="more-list"></ul>
+    </section>
+
     <script src="../shared/constants.js"></script>
     <script src="../shared/page-detector.js"></script>
+    <script src="../shared/lens.js"></script>
     <script src="../shared/support.js"></script>
     <script src="../shared/releases.js"></script>
     <script src="popup.js"></script>

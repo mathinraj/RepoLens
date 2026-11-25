@@ -97,6 +97,7 @@ body {
 }
 
 .field-row .hint { margin-bottom: 0; }
+.field-row + .field { border-top: 1px solid var(--border); }
 
 select,
 input[type="text"],
@@ -401,6 +402,49 @@ select option {
 @media (max-width: 520px) {
   .provider-picker { grid-template-columns: 1fr; }
 }
+
+.repo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repo-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.repo-list code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+
+.repo-show-btn {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.repo-show-btn:hover { border-color: var(--accent); }
 
 .links {
   display: flex;
