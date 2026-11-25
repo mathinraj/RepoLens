@@ -2,13 +2,14 @@
  * RepoLens What's new — release notes from GitHub Releases + update prompt.
  */
 (function () {
-  const { STORAGE, RELEASES_URL } = globalThis.REPOLENS;
+  const { STORAGE, RELEASES_URL, CHANGELOG_URL } = globalThis.REPOLENS;
   const Releases = globalThis.RepoLensReleases;
 
   const $ = (id) => document.getElementById(id);
   const current = Releases.currentVersion();
 
   $('all-releases').href = RELEASES_URL;
+  $('changelog-link').href = CHANGELOG_URL;
   globalThis.RepoLensSupport.feedbackUrl('feature').then((url) => {
     $('feedback-link').href = url;
   });

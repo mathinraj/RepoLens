@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog · RepoLens</title>
+  <meta name="description" content="Every RepoLens release: new features, fixes, and changes to the Chrome extension that answers questions about GitHub repos, pull requests, files, and commits.">
+  <link rel="canonical" href="https://repolensio.vercel.app/changelog.html">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+  <link rel="icon" type="image/png" sizes="128x128" href="/assets/logo-128.png">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/">Repo<span>Lens</span></a>
+      <nav class="nav-links">
+        <a href="/#features">Features</a>
+        <a href="/privacy.html">Privacy</a>
+        <a class="cta" href="/#install">Get RepoLens</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="prose changelog">
+    <h1 class="page-title">Changelog</h1>
+    <p class="lede-sm">What changed in each release. Releases are also on <a href="https://github.com/mathinraj/RepoLens/releases">GitHub</a>.</p>
+
+    <article class="release" id="v1.2.0">
+      <header class="release__head">
+        <h2><a href="#v1.2.0">v1.2.0</a></h2>
+        <span class="release__tag">First public release</span>
+        <time datetime="2026-11-25">November 25, 2026</time>
+      </header>
+      <p class="release__intro">RepoLens answers questions about the GitHub page you're on, in a side panel, using your own Claude, ChatGPT, or Gemini key. There is no RepoLens server and no account.</p>
+
+      <h3>Ask about any GitHub page</h3>
+      <ul>
+        <li>Works on repositories, folders, pull requests, files, and commits, with suggested questions for each.</li>
+        <li><strong>Instant</strong> answers from the page, diff, and README, or <strong>Deep</strong> answers that also read changed files, review comments, linked issues, configs, and CODEOWNERS.</li>
+        <li>Open the panel from the on-page lens, the toolbar popup, or <kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>.</li>
+      </ul>
+
+      <h3>Your AI, your key</h3>
+      <ul>
+        <li>Bring an API key for Anthropic Claude, OpenAI (ChatGPT models), or Google Gemini. A free Gemini key works.</li>
+        <li>Pick the AI and model for each question from the side panel.</li>
+        <li><strong>Compare:</strong> with two or more keys, send one question to several AIs and switch between their answers in tabs. GitHub context is fetched once, whatever the number of AIs.</li>
+        <li>Optional GitHub token for private repositories and higher GitHub limits.</li>
+      </ul>
+
+      <h3>Conversations</h3>
+      <ul>
+        <li>One conversation per repository, shared across its home page, folders, files, and pull requests, and kept when you come back.</li>
+        <li>Prefer one history per page? Switch it in Settings.</li>
+      </ul>
+
+      <h3>Popup, lens, and settings</h3>
+      <ul>
+        <li>Toolbar popup with the current page, the active AI, and a button to open or close the panel.</li>
+        <li>Hide the on-page lens on one repository or everywhere.</li>
+        <li>Settings save automatically and show whether each key works.</li>
+        <li>Optional lock: require Touch ID or Windows Hello before keys can be shown or changed.</li>
+      </ul>
+
+      <h3>Updates and feedback</h3>
+      <ul>
+        <li>A welcome page walks you through setup.</li>
+        <li>After an update, a What's new page shows the release notes.</li>
+        <li>Send bugs and ideas from the feedback page. Every message is read.</li>
+      </ul>
+
+      <h3>Privacy</h3>
+      <ul>
+        <li>Keys stay in your browser and are never synced. Each key is sent only to the service that issued it.</li>
+        <li>Page content is read only when you ask a question. No analytics, no tracking. Read the <a href="/privacy.html">privacy policy</a>.</li>
+      </ul>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>RepoLens · Made by <a href="https://mathinraj.is-a.dev/">Mathinraj</a></span>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/feedback.html">Feedback</a>
+        <a href="https://github.com/mathinraj/RepoLens">Source</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

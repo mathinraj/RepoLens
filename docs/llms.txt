@@ -20,6 +20,7 @@ Key facts:
 
 ## Optional
 
+- [Changelog](https://repolensio.vercel.app/changelog.html): what changed in each release
 - [Source code](https://github.com/mathinraj/RepoLens)
 - [Feedback](https://repolensio.vercel.app/feedback.html): report a bug, request a feature, or ask a question
 - [Developer](https://mathinraj.is-a.dev/)
