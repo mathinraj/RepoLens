@@ -10,23 +10,24 @@
   const keyInput = document.getElementById('api-key');
   const keyLabel = document.getElementById('api-key-label');
   const keyLink = document.getElementById('api-key-link');
-  const aiCheckLabel = document.getElementById('ai-check-label');
   const tokenInput = document.getElementById('github-token');
   const modelSelect = document.getElementById('model-select');
   const modelHint = document.getElementById('model-hint');
   const customWrap = document.getElementById('custom-wrap');
   const customInput = document.getElementById('custom-model');
   const prefetchToggle = document.getElementById('prefetch-toggle');
-  const saveBtn = document.getElementById('save-btn');
-  const statusEl = document.getElementById('status');
-  const recheckBtn = document.getElementById('recheck-btn');
+  const toastEl = document.getElementById('toast');
 
   const CUSTOM_VALUE = '__custom__';
 
-  /** Unsaved per-provider edits, so switching providers keeps typed values. */
+  /** Per-provider values, so switching providers keeps each key and model. */
   const drafts = { keys: {}, models: {} };
+  /** Last values written to storage, to save (and re-check) only what changed. */
+  const saved = {};
   let providerId = DEFAULT_PROVIDER;
   let checkSeq = 0;
+
+  document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
 
   const provider = () => PROVIDERS[providerId];
 
@@ -43,10 +44,12 @@
 
       const name = document.createElement('span');
       name.className = 'provider-name';
-      name.textContent = p.label;
+      name.textContent = p.label.split(' (')[0];
       const state = document.createElement('span');
       state.className = 'provider-state';
-      state.textContent = drafts.keys[p.id] ? 'Key added' : 'No key';
+      const hasKey = Boolean(drafts.keys[p.id]);
+      state.classList.toggle('has-key', hasKey);
+      state.textContent = hasKey ? 'Key added' : 'No key';
       btn.append(name, state);
 
       btn.addEventListener('click', () => switchProvider(p.id));
@@ -65,13 +68,12 @@
     stashCurrent();
     providerId = id;
     applyProvider();
-    checkAi();
+    save();
   }
 
   function applyProvider() {
     const p = provider();
-    keyLabel.textContent = `${p.label} API key`;
-    aiCheckLabel.textContent = `${p.label.split(' (')[0]} key`;
+    keyLabel.textContent = `${p.label.split(' (')[0]} API key`;
     keyLink.href = p.keyUrl;
     keyLink.textContent = p.keyHost;
     keyInput.placeholder = p.keyPlaceholder;
@@ -124,13 +126,19 @@
   modelSelect.addEventListener('change', () => {
     customWrap.classList.toggle('is-hidden', modelSelect.value !== CUSTOM_VALUE);
     drafts.models[providerId] = selectedModelValue();
+    if (modelSelect.value === CUSTOM_VALUE) customInput.focus();
+    else save();
   });
   customInput.addEventListener('input', () => {
     drafts.models[providerId] = selectedModelValue();
+    scheduleSave();
   });
   keyInput.addEventListener('input', () => {
     drafts.keys[providerId] = keyInput.value.trim();
+    scheduleSave();
   });
+  tokenInput.addEventListener('input', () => scheduleSave());
+  prefetchToggle.addEventListener('change', () => save());
 
   // ─── Status checks ──────────────────────────────────────────────────────────
   function setCheck(key, state, value) {
@@ -145,7 +153,7 @@
     const id = providerId;
     const apiKey = keyInput.value.trim();
     if (!apiKey) {
-      setCheck('ai', 'bad', 'Not set — required');
+      setCheck('ai', 'bad', 'Required — paste a key to start asking');
       modelHint.textContent = 'Add an API key to load the models available to you.';
       renderModels([]);
       return;
@@ -167,7 +175,7 @@
   async function checkGitHub() {
     const token = tokenInput.value.trim();
     if (!token) {
-      setCheck('github', 'warn', 'Not set — public repos only (60 requests/hour)');
+      setCheck('github', 'warn', 'Not set — public repos only, 60 GitHub requests per hour');
       return;
     }
     setCheck('github', 'pending', 'Checking…');
@@ -183,7 +191,20 @@
     return Promise.all([checkAi(), checkGitHub()]);
   }
 
-  // ─── Load / save ────────────────────────────────────────────────────────────
+  // ─── Load / auto-save ───────────────────────────────────────────────────────
+  function currentValues() {
+    const values = {
+      [STORAGE.PROVIDER]: providerId,
+      [STORAGE.GITHUB_TOKEN]: tokenInput.value.trim(),
+      [STORAGE.PREFETCH]: prefetchToggle.checked,
+    };
+    for (const p of Object.values(PROVIDERS)) {
+      values[p.keyStorage] = drafts.keys[p.id] || '';
+      values[p.modelStorage] = drafts.models[p.id] || '';
+    }
+    return values;
+  }
+
   async function loadPrefs() {
     const keys = [STORAGE.PROVIDER, STORAGE.GITHUB_TOKEN, STORAGE.PREFETCH];
     for (const p of Object.values(PROVIDERS)) keys.push(p.keyStorage, p.modelStorage);
@@ -196,35 +217,38 @@
     providerId = PROVIDERS[s[STORAGE.PROVIDER]] ? s[STORAGE.PROVIDER] : DEFAULT_PROVIDER;
     tokenInput.value = s[STORAGE.GITHUB_TOKEN] || '';
     prefetchToggle.checked = s[STORAGE.PREFETCH] !== false;
+    Object.assign(saved, currentValues());
   }
 
-  function flashStatus(text, ok = true) {
-    statusEl.textContent = text;
-    statusEl.style.color = ok ? '' : 'var(--danger)';
-    statusEl.classList.add('is-visible');
-    setTimeout(() => statusEl.classList.remove('is-visible'), 2200);
+  let toastTimer = 0;
+  function toast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('is-visible'), 1600);
   }
 
-  saveBtn.addEventListener('click', async () => {
+  let saveTimer = 0;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 600);
+  }
+
+  async function save() {
+    clearTimeout(saveTimer);
     stashCurrent();
-    const values = {
-      [STORAGE.PROVIDER]: providerId,
-      [STORAGE.GITHUB_TOKEN]: tokenInput.value.trim(),
-      [STORAGE.PREFETCH]: prefetchToggle.checked,
-    };
-    for (const p of Object.values(PROVIDERS)) {
-      values[p.keyStorage] = drafts.keys[p.id] || '';
-      values[p.modelStorage] = drafts.models[p.id] || '';
-    }
+    const values = currentValues();
+    const changed = Object.keys(values).filter((k) => values[k] !== saved[k]);
+    if (!changed.length) return;
+    Object.assign(saved, values);
     await chrome.storage.local.set(values);
-
-    const hasKey = Boolean(drafts.keys[providerId]);
-    flashStatus(hasKey ? `Saved — using ${provider().label}` : 'Saved — add an API key to start', hasKey);
+    toast('Saved');
     renderPicker();
-    runChecks();
-  });
+    if (changed.includes(STORAGE.PROVIDER) || changed.includes(provider().keyStorage)) checkAi();
+    if (changed.includes(STORAGE.GITHUB_TOKEN)) checkGitHub();
+  }
 
-  recheckBtn.addEventListener('click', runChecks);
+  window.addEventListener('pagehide', () => save());
 
   const revealButtons = document.querySelectorAll('.reveal-btn');
 
@@ -397,18 +421,20 @@
     runChecks();
   });
 
-  // ─── On-page lens (saved immediately, not by "Save preferences") ────────────
+  // ─── On-page lens ───────────────────────────────────────────────────────────
   const Lens = globalThis.RepoLensLens;
   const lensToggle = document.getElementById('lens-toggle');
   const lensRepos = document.getElementById('lens-repos');
+  const lensReposRow = document.getElementById('lens-repos-row');
   const lensReposHint = document.getElementById('lens-repos-hint');
 
   async function renderLens() {
     const { all, repos } = await Lens.get();
     lensToggle.checked = !all;
-    lensReposHint.textContent = repos.length
-      ? (all ? 'Kept for when you turn the lens back on.' : 'The lens stays hidden on these repos.')
-      : 'None. Hide the lens on a repo from the toolbar popup.';
+    lensReposRow.classList.toggle('is-hidden', !repos.length);
+    lensReposHint.textContent = all
+      ? 'Kept for when you turn the lens back on.'
+      : 'Hidden from the toolbar popup. Show it again here.';
     lensRepos.replaceChildren(...repos.map((repo) => {
       const li = document.createElement('li');
       const name = document.createElement('code');
@@ -416,14 +442,15 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'repo-show-btn';
-      btn.textContent = 'Show lens';
-      btn.addEventListener('click', () => Lens.setRepo(repo, false));
+      btn.textContent = 'Show';
+      btn.setAttribute('aria-label', `Show the lens on ${repo}`);
+      btn.addEventListener('click', () => Lens.setRepo(repo, false).then(() => toast('Saved')));
       li.append(name, btn);
       return li;
     }));
   }
 
-  lensToggle.addEventListener('change', () => Lens.setAll(!lensToggle.checked));
+  lensToggle.addEventListener('change', () => Lens.setAll(!lensToggle.checked).then(() => toast('Saved')));
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes[STORAGE.LENS_HIDDEN]) renderLens();
   });

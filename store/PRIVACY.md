@@ -46,7 +46,7 @@ The pages show you those diagnostics, and you can untick them before sending. No
 ## Your control
 
 - **Clear a conversation:** use the **Clear** button in the side panel.
-- **Remove credentials:** delete them on the RepoLens Preferences page and save.
+- **Remove credentials:** delete them on the RepoLens Settings page.
 - **Key lock:** optionally require Touch ID or Windows Hello before keys are shown or changed on the Preferences page. It protects the page, not the stored data: keys are not encrypted.
 - **Delete everything:** uninstall the extension; Chrome deletes all of its stored data.
 - **Revoke access:** revoke your AI key with its provider ([Anthropic](https://console.anthropic.com/settings/keys), [OpenAI](https://platform.openai.com/api-keys), [Google AI Studio](https://aistudio.google.com/app/apikey)) or the GitHub token at <https://github.com/settings/tokens>.

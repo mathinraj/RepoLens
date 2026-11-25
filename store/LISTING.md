@@ -137,7 +137,7 @@ The feedback and uninstall pages on repolensio.vercel.app receive basic diagnost
 Reviewers need a working key or they will reject the item as non-functional. Create a **dedicated** API key with a low spend limit (any one provider is enough — a free-tier Gemini key works), paste it below, and revoke it after approval.
 
 ```
-1. After install, the RepoLens welcome page opens. Click "Open Settings". Select "<PROVIDER>", paste this API key, and click "Save preferences":
+1. After install, the RepoLens welcome page opens. Click "Open Settings". Select "<PROVIDER>", and paste this API key (it saves automatically):
    <PASTE REVIEW-ONLY KEY HERE>
    The status should show "Valid". No GitHub token is needed for public repositories.
 2. Open https://github.com/markedjs/marked/pull/3600

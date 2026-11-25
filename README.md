@@ -127,7 +127,7 @@ The toolbar popup also shows which AI provider and model are active, lets you hi
 
 ## ⚙️ Dial it in
 
-Everything lives on the Preferences page (gear icon in the panel):
+Everything lives on the Settings page (gear icon in the panel or popup), and changes save automatically:
 
 | Setting | Needed? | What it's for |
 |---|:---:|---|
