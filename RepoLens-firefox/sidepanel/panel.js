@@ -618,6 +618,10 @@
         `<em>${turn.mode === MODES.DEEP ? 'Pulling full context' : 'Generating answer'}</em></div>`;
     } else if (turn.status === 'error') {
       body.innerHTML = `<div class="answer-error">${escapeHtml(turn.error || 'Something went wrong.')}</div>`;
+      const help = errorHelp(turn.errorStatus, turn.providerId);
+      if (help) body.appendChild(help);
+      const actions = document.createElement('div');
+      actions.className = 'error-actions';
       const retry = document.createElement('button');
       retry.type = 'button';
       retry.className = 'retry-btn';
@@ -628,7 +632,9 @@
         retry.textContent = 'Retry';
         retry.addEventListener('click', () => retryTurn(turn));
       }
-      answer.appendChild(retry);
+      actions.appendChild(retry);
+      if (help) actions.appendChild(changeModelButton());
+      answer.appendChild(actions);
     } else {
       body.innerHTML = renderMarkdown(turn.answer || '');
       answer.appendChild(buildActions(turn));
@@ -645,6 +651,33 @@
   }
 
   const activeResult = (turn) => turn.results.find((r) => r.providerId === turn.active) || turn.results[0];
+
+  /** What to do about a provider error, by HTTP status; null when a retry is all there is. */
+  function errorHelp(status, providerId) {
+    const name = shortName(providerId) || 'This AI';
+    let text = '';
+    if (status === 404) text = `Tip: Change model lists only the models your ${name} key can use.`;
+    else if (status === 429) text = 'Tip: another model, or another AI, usually answers without the wait.';
+    else if (status === 402) text = `Tip: switch to another AI from Change model, or check your plan with ${name}.`;
+    else if (status >= 500) text = 'Tip: smaller models (Flash, mini, Haiku) are usually less busy. Try one from Change model.';
+    if (!text) return null;
+    const p = document.createElement('p');
+    p.className = 'error-help';
+    p.textContent = text;
+    return p;
+  }
+
+  function changeModelButton() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'retry-btn is-secondary';
+    btn.textContent = 'Change model';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setAiMenu(true);
+    });
+    return btn;
+  }
 
   /** Tabs, one per AI, and the selected AI's answer underneath. */
   function buildCompareAnswer(turn) {
@@ -693,7 +726,11 @@
         `<em>${escapeHtml(shortName(current.providerId))} is ${turn.mode === MODES.DEEP ? 'reading the full context' : 'answering'}</em></div>`;
     } else if (current.status === 'error') {
       body.innerHTML = `<div class="answer-error">${escapeHtml(current.error || 'Something went wrong.')}</div>`;
+      const help = errorHelp(current.errorStatus, current.providerId);
+      if (help) body.appendChild(help);
       if (turn.status !== 'pending') {
+        const actions = document.createElement('div');
+        actions.className = 'error-actions';
         const retry = document.createElement('button');
         retry.type = 'button';
         retry.className = 'retry-btn';
@@ -701,9 +738,11 @@
         retry.addEventListener('click', () => askQuestion(turn.question, {
           fromChip: true,
           forceMode: turn.mode,
-          targets: [{ providerId: current.providerId, model: current.model }],
+          targets: [{ providerId: current.providerId, model: modelOf(current.providerId) }],
         }));
-        answer.appendChild(retry);
+        actions.appendChild(retry);
+        if (help) actions.appendChild(changeModelButton());
+        answer.appendChild(actions);
       }
     } else {
       body.innerHTML = renderMarkdown(current.answer || '');
@@ -841,7 +880,7 @@
     // Remove the errored turn, then re-ask the same AI(s).
     thread = thread.filter((t) => t.id !== turn.id);
     const targets = turn.compare && turn.results
-      ? turn.results.map((r) => ({ providerId: r.providerId, model: r.model }))
+      ? turn.results.map((r) => ({ providerId: r.providerId, model: modelOf(r.providerId) }))
       : turn.providerId ? [{ providerId: turn.providerId, model: modelOf(turn.providerId) }] : undefined;
     askQuestion(turn.question, { fromChip: true, forceMode: turn.mode, targets });
   }
@@ -937,6 +976,7 @@
         turn.error = extra.error || 'Ask failed';
         turn.retryable = extra.retryable !== false;
         turn.needsSetup = Boolean(extra.needsSetup);
+        turn.errorStatus = extra.status;
       }
 
       if (inFlightTurn === turn) {
@@ -990,11 +1030,11 @@
         return;
       }
       if (msg.type === MSG.ASK_ERROR) {
-        const extra = { error: msg.error, retryable: msg.retryable, needsSetup: msg.needsSetup };
+        const extra = { error: msg.error, retryable: msg.retryable, needsSetup: msg.needsSetup, status: msg.status };
         const r = resultFor(msg.providerId);
         if (!compare) finalize('error', extra);
         else if (r) {
-          Object.assign(r, { status: 'error', error: msg.error || 'Ask failed' });
+          Object.assign(r, { status: 'error', error: msg.error || 'Ask failed', errorStatus: msg.status });
           landResult(r);
         } else {
           finalize('error', extra);

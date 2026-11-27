@@ -448,6 +448,7 @@ chrome.runtime.onConnect.addListener((port) => {
           type: MSG.ASK_ERROR,
           error: err?.message || String(err),
           retryable: err?.retryable !== false,
+          status: err?.status,
         });
       })
       .finally(() => safeSend({ type: MSG.ASK_FINISHED }));
@@ -593,6 +594,7 @@ async function handleAskMessage(message, safeSend, signal) {
         providerId: t.provider.id,
         error: err?.message || String(err),
         retryable: err?.retryable !== false,
+        status: err?.status,
       });
       throw err;
     }

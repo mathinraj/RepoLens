@@ -895,3 +895,21 @@ body {
 .conversation::-webkit-scrollbar-track { background: transparent; }
 .conversation::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .conversation::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Provider error guidance */
+.error-help {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.error-actions .retry-btn.is-secondary {
+  color: var(--fg);
+}

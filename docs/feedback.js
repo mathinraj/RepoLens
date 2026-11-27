@@ -16,7 +16,7 @@
   const PRODUCT = 'RepoLens';
 
   const PROVIDERS = { anthropic: 'Anthropic Claude', openai: 'OpenAI', gemini: 'Google Gemini' };
-  const BROWSERS = { chrome: 'Chrome', edge: 'Edge' };
+  const BROWSERS = { chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox' };
 
   const form = document.getElementById('feedback-form');
   if (!form) return;
@@ -25,7 +25,7 @@
 
   const clean = (v, max = 60) => String(v || '').replace(/[^\w .:/@+-]/g, '').slice(0, max);
 
-  /** Human-readable diagnostics from the extension's URL params. */
+  /** Human-readable diagnostics from the extension's URL params, attached to every message. */
   function readDiagnostics() {
     const rows = [];
     const add = (label, value) => value && rows.push([label, value]);
@@ -44,20 +44,6 @@
   }
 
   const diagnostics = readDiagnostics();
-  const diagWrap = document.getElementById('diagnostics');
-  const diagList = document.getElementById('diagnostics-list');
-  const diagToggle = document.getElementById('include-diagnostics');
-
-  if (diagnostics.length && diagWrap) {
-    diagWrap.classList.remove('is-hidden');
-    for (const [label, value] of diagnostics) {
-      const dt = document.createElement('dt');
-      dt.textContent = label;
-      const dd = document.createElement('dd');
-      dd.textContent = value;
-      diagList.append(dt, dd);
-    }
-  }
 
   // Preselect the feedback type from ?type=
   const type = params.get('type');
@@ -84,7 +70,7 @@
     } else {
       parts.push(message);
     }
-    if (diagnostics.length && (!diagToggle || diagToggle.checked)) {
+    if (diagnostics.length) {
       parts.push('', '---', ...diagnostics.map(([k, v]) => `${k}: ${v}`));
     }
     // Header in the body itself, so the product shows even in templates

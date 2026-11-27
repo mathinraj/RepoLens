@@ -41,7 +41,7 @@ RepoLens contains no analytics, advertising, or tracking, and loads no remote co
 
 **Feedback** links (toolbar popup, Preferences, welcome and What's new pages) open the feedback form at `repolensio.vercel.app/feedback.html`. When RepoLens is uninstalled, Chrome opens a short survey at `repolensio.vercel.app/uninstall.html`. Both links carry these diagnostics in the URL: RepoLens version and store build, browser and version, operating system, selected AI provider and model, whether an API key and a GitHub token are set (yes/no), number of answers received, and days since install. They never include API keys, tokens, repository names, questions, or answers.
 
-The pages show you those diagnostics, and you can untick them before sending. Nothing is sent unless you press **Send**. When you do, your message, the diagnostics you chose to include, and your email address (only if you enter one) are delivered to the developer by email through [EmailJS](https://www.emailjs.com/legal/privacy-policy/). The website is hosted on Vercel, which may keep standard request logs (including page URLs) as described in [Vercel's privacy policy](https://vercel.com/legal/privacy-policy).
+Nothing is sent unless you press **Send**. When you do, your message, those diagnostics (attached automatically), and your email address (only if you enter one) are delivered to the developer by email through [EmailJS](https://www.emailjs.com/legal/privacy-policy/). The website is hosted on Vercel, which may keep standard request logs (including page URLs) as described in [Vercel's privacy policy](https://vercel.com/legal/privacy-policy).
 
 ## Your control
 
