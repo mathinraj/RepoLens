@@ -251,6 +251,10 @@ a:hover { color: var(--sc-accent); }
   margin: 1.5rem 0 0; padding: 0; list-style: none;
   font-size: 0.875rem; color: var(--sc-ink-soft);
 }
+.close__stores a { color: var(--sc-ink); text-decoration-color: var(--sc-accent); text-underline-offset: 0.25em; }
+.close__stores span.is-live { color: var(--sc-accent); border-color: var(--sc-accent); }
+.close__edge { margin: 1rem 0 0; max-width: 52ch; font-size: 0.85rem; color: var(--sc-ink-soft); }
+.close__edge code { font: 0.85em var(--sc-font-mono); }
 .close__stores span {
   margin-left: 0.4rem; padding: 0.1rem 0.5rem; border-radius: 999px;
   border: 1px solid var(--sc-hairline-strong);

@@ -1,5 +1,7 @@
 # Chrome Web Store submission kit
 
+**Live listing:** <https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci> (item ID `khjmcbpiaknmadpolbifmjacjieeogci`).
+
 Copy-paste text for each field in the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole), plus the assets still to produce.
 
 ## Upload

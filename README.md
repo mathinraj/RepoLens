@@ -12,7 +12,9 @@
 
 ![Made for](https://img.shields.io/badge/made%20for-github.com-0969da?style=for-the-badge&logo=github)
 ![Powered by](https://img.shields.io/badge/AI-Claude%20%7C%20ChatGPT%20%7C%20Gemini-6e40c9?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci)
+
+**[Add RepoLens to Chrome](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci)** · [Website](https://repolensio.vercel.app) · [Changelog](https://repolensio.vercel.app/changelog.html)
 
 <br>
 
@@ -115,7 +117,7 @@ the right questions for each.
 
 ## 🚀 Get it running
 
-1. Download `repolens-<version>-chrome.zip` (or `-edge.zip`) from the [latest release](https://github.com/mathinraj/RepoLens/releases/latest) and unzip it. Open `chrome://extensions` (or `edge://extensions`), turn on **Developer mode**, click **Load unpacked**, and pick the unzipped folder. For development, pick `RepoLens-extension/` instead. Chrome Web Store and Edge Add-ons listings are coming soon.
+1. Install RepoLens from the [Chrome Web Store](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci). On Edge (Add-ons listing coming soon), download `repolens-<version>-edge.zip` from the [latest release](https://github.com/mathinraj/RepoLens/releases/latest), unzip it, open `edge://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick the unzipped folder. For development, load `RepoLens-extension/` the same way.
 2. The welcome page opens; click **Open Settings**, pick a provider, and paste its API key: [Anthropic](https://console.anthropic.com/settings/keys), [OpenAI](https://platform.openai.com/api-keys), or [Google Gemini](https://aistudio.google.com/app/apikey).
 3. Optionally add a **GitHub token** (see below).
 4. Open any [github.com](https://github.com) page and click the blue lens on the page, the toolbar icon → **Open RepoLens panel**, or press <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>. Ask away 🎉

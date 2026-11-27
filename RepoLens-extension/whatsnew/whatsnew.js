@@ -2,7 +2,7 @@
  * RepoLens What's new — release notes from GitHub Releases + update prompt.
  */
 (function () {
-  const { STORAGE, RELEASES_URL, CHANGELOG_URL } = globalThis.REPOLENS;
+  const { STORAGE, RELEASES_URL, CHANGELOG_URL, CHROME_STORE_URL, STORE } = globalThis.REPOLENS;
   const Releases = globalThis.RepoLensReleases;
 
   const $ = (id) => document.getElementById(id);
@@ -91,8 +91,18 @@
     // Installed from a GitHub release zip (no store update_url): Chrome can't
     // update it, so point at the download instead.
     if (!chrome.runtime.getManifest().update_url) {
-      $('update-text').textContent =
+      const text = $('update-text');
+      text.textContent =
         'Download the new zip, unzip it over your RepoLens folder, then press the reload icon on RepoLens in chrome://extensions. Your keys and settings are kept.';
+      if (STORE === 'chrome') {
+        const store = document.createElement('a');
+        store.href = CHROME_STORE_URL;
+        store.target = '_blank';
+        store.rel = 'noopener';
+        store.textContent = 'Chrome Web Store';
+        text.append(' Or install it from the ', store,
+          ' to get updates automatically (it is a separate install, so add your keys again there).');
+      }
       const btn = $('update-btn');
       btn.textContent = 'Download';
       btn.addEventListener('click', () => {

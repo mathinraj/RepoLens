@@ -10,6 +10,7 @@ const REPOLENS = {
   REPO_URL: 'https://github.com/mathinraj/RepoLens',
   RELEASES_URL: 'https://github.com/mathinraj/RepoLens/releases',
   CHANGELOG_URL: 'https://repolensio.vercel.app/changelog.html',
+  CHROME_STORE_URL: 'https://chromewebstore.google.com/detail/khjmcbpiaknmadpolbifmjacjieeogci',
   RELEASES_API: 'https://api.github.com/repos/mathinraj/RepoLens/releases',
   SAMPLE_PR_URL: 'https://github.com/markedjs/marked/pull/3600',
 
