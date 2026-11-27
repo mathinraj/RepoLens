@@ -16,8 +16,8 @@ const REPOLENS = {
 
   /** Which store this build is for. This is the Firefox build (RepoLens-firefox/). */
   STORE: 'firefox',
-  /** Firefox Add-ons listing, e.g. 'https://addons.mozilla.org/firefox/addon/repolens/'. Empty until listed. */
-  AMO_URL: '',
+  /** Firefox Add-ons listing */
+  AMO_URL: 'https://addons.mozilla.org/firefox/addon/repolens-ai-answers-for-github/',
   /**
    * WebAuthn relying party for the key lock. Firefox rejects moz-extension://
    * origins, and since Firefox 150 accepts a domain the extension has host

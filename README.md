@@ -13,8 +13,9 @@
 ![Made for](https://img.shields.io/badge/made%20for-github.com-0969da?style=for-the-badge&logo=github)
 ![Powered by](https://img.shields.io/badge/AI-Claude%20%7C%20ChatGPT%20%7C%20Gemini-6e40c9?style=for-the-badge)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci)
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add--ons-Install-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/repolens-ai-answers-for-github/)
 
-**[Add RepoLens to Chrome](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci)** · [Website](https://repolensio.vercel.app) · [Changelog](https://repolensio.vercel.app/changelog.html)
+**[Add to Chrome](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci)** · **[Add to Firefox](https://addons.mozilla.org/firefox/addon/repolens-ai-answers-for-github/)** · [Website](https://repolensio.vercel.app) · [Changelog](https://repolensio.vercel.app/changelog.html)
 
 <br>
 
@@ -117,7 +118,7 @@ the right questions for each.
 
 ## 🚀 Get it running
 
-1. Install RepoLens from the [Chrome Web Store](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci). On Edge (Add-ons listing coming soon), download `repolens-<version>-edge.zip` from the [latest release](https://github.com/mathinraj/RepoLens/releases/latest), unzip it, open `edge://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick the unzipped folder. For development, load `RepoLens-extension/` the same way.
+1. Install RepoLens from the [Chrome Web Store](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci) or [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/repolens-ai-answers-for-github/). On Edge (Add-ons listing coming soon), download `repolens-<version>-edge.zip` from the [latest release](https://github.com/mathinraj/RepoLens/releases/latest), unzip it, open `edge://extensions`, turn on **Developer mode**, click **Load unpacked**, and pick the unzipped folder. For development, load `RepoLens-extension/` the same way.
 2. The welcome page opens; click **Open Settings**, pick a provider, and paste its API key: [Anthropic](https://console.anthropic.com/settings/keys), [OpenAI](https://platform.openai.com/api-keys), or [Google Gemini](https://aistudio.google.com/app/apikey).
 3. Optionally add a **GitHub token** (see below).
 4. Open any [github.com](https://github.com) page and click the blue lens on the page, the toolbar icon → **Open RepoLens panel**, or press <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>. Ask away 🎉
@@ -126,7 +127,7 @@ The toolbar popup also shows which AI provider and model are active, lets you hi
 
 ### 🦊 Firefox
 
-The Firefox build lives in `RepoLens-firefox/` (Firefox 140 or later; the Add-ons listing is coming soon). To try it, open `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and pick `RepoLens-firefox/manifest.json` (or the `-firefox.zip` from a release). Temporary add-ons are removed when Firefox restarts.
+The Firefox build lives in `RepoLens-firefox/` (Firefox 140 or later) and is published on [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/repolens-ai-answers-for-github/). To try a development copy, open `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and pick `RepoLens-firefox/manifest.json` (or the `-firefox.zip` from a release). Temporary add-ons are removed when Firefox restarts.
 
 It works like the Chrome version, with these differences:
 - Firefox only opens its sidebar from browser UI, so RepoLens opens as a **panel docked inside the GitHub page** instead. The on-page lens, the toolbar popup, and <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> all open it; the ✕ button or <kbd>Esc</kbd> closes it. On wide windows the page moves over to make room, and the panel reopens if you reload the tab.

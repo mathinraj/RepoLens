@@ -15,6 +15,7 @@ Key facts:
 ## Docs
 
 - [Chrome Web Store](https://chromewebstore.google.com/detail/repolens-%E2%80%93-ai-answers-for/khjmcbpiaknmadpolbifmjacjieeogci): install RepoLens for Chrome
+- [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/repolens-ai-answers-for-github/): install RepoLens for Firefox
 - [Homepage](https://repolensio.vercel.app/): features, AI providers, privacy summary, and install steps
 - [Privacy policy](https://repolensio.vercel.app/privacy.html): exactly what the extension accesses and where it goes
 - [README](https://github.com/mathinraj/RepoLens/blob/main/README.md): setup, settings, and publishing
