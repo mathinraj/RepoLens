@@ -1,0 +1,81 @@
+{
+  "manifest_version": 3,
+  "name": "RepoLens – AI Answers for GitHub Repos & PRs",
+  "short_name": "RepoLens",
+  "version": "1.2.1",
+  "description": "Ask AI about any GitHub repo, PR, file, or commit in a sidebar. Bring your own Claude, ChatGPT (OpenAI), or Gemini key.",
+  "homepage_url": "https://repolensio.vercel.app",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "repolens@repolensio.vercel.app",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["websiteContent"]
+      }
+    }
+  },
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://github.com/*",
+    "https://api.github.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://repolensio.vercel.app/*"
+  ],
+  "background": {
+    "scripts": [
+      "shared/constants.js",
+      "shared/support.js",
+      "shared/releases.js",
+      "background/github.js",
+      "background/prompts.js",
+      "background/providers.js",
+      "background/service-worker.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["shared/constants.js", "shared/page-detector.js", "shared/lens.js", "content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "sidebar_action": {
+    "default_title": "RepoLens",
+    "default_panel": "sidepanel/panel.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png"
+    },
+    "open_at_install": false
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "RepoLens",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "commands": {
+    "_execute_sidebar_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Toggle RepoLens sidebar"
+    }
+  }
+}

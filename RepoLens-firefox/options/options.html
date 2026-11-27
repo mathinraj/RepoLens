@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RepoLens — Settings</title>
+    <link rel="icon" href="../icons/search-compass.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="head">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="56" cy="55" r="34" fill="none" stroke="var(--accent, #38BDF8)" stroke-width="9"/>
+            <path d="m81 80 25 25" stroke="var(--accent, #38BDF8)" stroke-width="12" stroke-linecap="round"/>
+            <path d="M56 26v10M56 74v10M27 55h10M75 55h10" stroke="var(--accent-tick, #2DD4BF)" stroke-width="6" stroke-linecap="round"/>
+            <path d="m50 43-12 12 12 12M62 43l12 12-12 12" fill="none" stroke="var(--fg, #1f2328)" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div class="head-text">
+          <h1>Settings</h1>
+          <p class="sub">Changes save automatically.</p>
+        </div>
+        <span id="version" class="version"></span>
+      </header>
+
+      <div class="lock-bar is-hidden" id="lock-bar" role="status">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <path fill="currentColor" d="M4 7V5a4 4 0 1 1 8 0v2h.5c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5v-5C2 7.67 2.67 7 3.5 7H4Zm1.5 0h5V5a2.5 2.5 0 0 0-5 0v2Z"/>
+        </svg>
+        <span id="lock-bar-text"></span>
+        <button type="button" id="lock-bar-btn" class="lock-bar-btn"></button>
+      </div>
+
+      <!-- AI provider -->
+      <section class="section" aria-labelledby="ai-title">
+        <h2 id="ai-title" class="section-title">AI provider</h2>
+        <div class="card">
+          <div class="row">
+            <div class="provider-picker" id="provider-picker" role="radiogroup" aria-labelledby="ai-title"></div>
+            <div class="callout" id="multi-callout">
+              <span class="callout-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M8 1.5a.75.75 0 0 1 .75.75v5h5a.75.75 0 0 1 0 1.5h-5v5a.75.75 0 0 1-1.5 0v-5h-5a.75.75 0 0 1 0-1.5h5v-5A.75.75 0 0 1 8 1.5Z"/></svg>
+              </span>
+              <div>
+                <strong id="multi-title">Add more than one key to use them together</strong>
+                <span id="multi-text">Every key you add stays saved. In the sidebar you can then switch the AI for each question, or ask several at once and compare their answers. The card you select here is the default.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label for="api-key" id="api-key-label" class="label">API key</label>
+            <div class="secret-row">
+              <input type="password" id="api-key" autocomplete="off" spellcheck="false" />
+              <button type="button" class="reveal-btn" data-target="api-key">Show</button>
+            </div>
+            <div class="check" data-key="ai">
+              <span class="dot is-pending"></span>
+              <span class="check-value">Checking…</span>
+            </div>
+            <p class="hint">
+              Get one at <a id="api-key-link" href="#" target="_blank" rel="noopener"></a>.
+              Usage is billed to your account with that provider.
+            </p>
+          </div>
+
+          <div class="row">
+            <label for="model-select" class="label">Model</label>
+            <select id="model-select"></select>
+            <p class="hint" id="model-hint">Used for both Instant and Deep answers.</p>
+            <div class="is-hidden sub-field" id="custom-wrap">
+              <input type="text" id="custom-model" aria-label="Custom model ID" />
+              <p class="hint">Enter an exact model ID for the selected provider.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GitHub -->
+      <section class="section" aria-labelledby="gh-title">
+        <h2 id="gh-title" class="section-title">GitHub</h2>
+        <div class="card">
+          <div class="row">
+            <label for="github-token" class="label">Personal access token <span class="opt">Optional</span></label>
+            <div class="secret-row">
+              <input type="password" id="github-token" placeholder="github_pat_…" autocomplete="off" spellcheck="false" />
+              <button type="button" class="reveal-btn" data-target="github-token">Show</button>
+            </div>
+            <div class="check" data-key="github">
+              <span class="dot is-pending"></span>
+              <span class="check-value">Checking…</span>
+            </div>
+            <div class="gh-compare">
+              <div class="gh-col">
+                <span class="gh-col-title">Without a token</span>
+                <span>Public repos only</span>
+                <span>60 GitHub requests an hour (a Deep answer uses about 10 to 25)</span>
+              </div>
+              <div class="gh-col is-plus">
+                <span class="gh-col-title">With a token</span>
+                <span>Private repos you can access</span>
+                <span>5,000 requests an hour, plus background pre-fetch</span>
+              </div>
+            </div>
+            <details class="gh-how" id="gh-how">
+              <summary>How to create a token</summary>
+              <ol>
+                <li>Open GitHub's <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">new fine-grained token</a> page.</li>
+                <li>Under <em>Repository access</em>, choose the repositories RepoLens may read.</li>
+                <li>Under <em>Repository permissions</em>, set <em>Contents</em>, <em>Pull requests</em> and <em>Issues</em> to <strong>Read-only</strong>. <em>Metadata</em> is read-only automatically.</li>
+                <li>Generate the token and paste it above. RepoLens never writes to GitHub.</li>
+              </ol>
+            </details>
+          </div>
+
+          <div class="row row-toggle">
+            <div>
+              <label for="prefetch-toggle" class="label">Pre-fetch page context</label>
+              <p class="hint">Loads GitHub context in the background so answers start faster. Needs a token.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="prefetch-toggle" />
+              <span class="slider" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Conversations -->
+      <section class="section" aria-labelledby="convo-title">
+        <h2 id="convo-title" class="section-title">Conversations</h2>
+        <div class="card">
+          <div class="row row-toggle">
+            <div>
+              <label for="history-scope-toggle" class="label">Keep one conversation per repo</label>
+              <p class="hint" id="history-scope-hint"></p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="history-scope-toggle" />
+              <span class="slider" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- On-page lens -->
+      <section class="section" aria-labelledby="lens-title">
+        <h2 id="lens-title" class="section-title">On-page lens</h2>
+        <div class="card">
+          <div class="row row-toggle">
+            <div>
+              <label for="lens-toggle" class="label">Show the lens on github.com</label>
+              <p class="hint">The toolbar icon and keyboard shortcut work either way.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="lens-toggle" />
+              <span class="slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <div class="row is-hidden" id="lens-repos-row">
+            <span class="label">Hidden on these repos</span>
+            <p class="hint" id="lens-repos-hint"></p>
+            <ul class="repo-list" id="lens-repos"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Security -->
+      <section class="section" aria-labelledby="sec-title">
+        <h2 id="sec-title" class="section-title">Security</h2>
+        <div class="card">
+          <div class="row row-toggle">
+            <div>
+              <label for="key-lock-toggle" class="label">Protect keys with <span class="auth-name">Touch ID / Windows Hello</span></label>
+              <p class="hint">
+                Required to show, change, or remove a key, switch providers, or turn this off.
+                Asking questions never needs it.
+              </p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="key-lock-toggle" />
+              <span class="slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <p class="lock-msg is-hidden" id="key-lock-msg" role="status"></p>
+          <div class="row">
+            <p class="note">
+              Keys are stored only in this browser and never synced. Each is sent only to the service that issued it.
+              The lock guards this page but doesn't encrypt the stored keys. Your fingerprint or face never leaves your device.
+              The system prompt will name <code>repolensio.vercel.app</code>: that's RepoLens.
+            </p>
+            <button type="button" id="key-lock-reset" class="link-btn is-hidden">Can't verify? Remove all keys and turn the lock off</button>
+          </div>
+        </div>
+      </section>
+
+      <nav class="links">
+        <a href="../welcome/welcome.html">Getting started</a>
+        <a href="../whatsnew/whatsnew.html">What's new</a>
+        <a id="privacy-link" href="#" target="_blank" rel="noopener">Privacy</a>
+        <a id="feedback-link" href="#" target="_blank" rel="noopener">Feedback</a>
+      </nav>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="../shared/constants.js"></script>
+    <script src="../shared/support.js"></script>
+    <script src="../shared/lens.js"></script>
+    <script src="key-lock.js"></script>
+    <script src="../background/github.js"></script>
+    <script src="../background/providers.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

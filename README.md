@@ -124,6 +124,17 @@ the right questions for each.
 
 The toolbar popup also shows which AI provider and model are active, lets you hide the on-page lens on the current repo or everywhere, and has a **Settings** button.
 
+### 🦊 Firefox
+
+The Firefox build lives in `RepoLens-firefox/` (Firefox 140 or later; the Add-ons listing is coming soon). To try it, open `about:debugging` → **This Firefox** → **Load Temporary Add-on**, and pick `RepoLens-firefox/manifest.json` (or the `-firefox.zip` from a release). Temporary add-ons are removed when Firefox restarts.
+
+It works like the Chrome version, with these differences:
+- Answers open in Firefox's **sidebar**. Open it from the toolbar popup or with <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>. Firefox doesn't let a page open the sidebar, so clicking the on-page lens shows those two options instead.
+- If Firefox installs it without site access, the popup shows an **Allow access** button.
+- The Touch ID / Windows Hello key lock needs Firefox 150 or later, and the system prompt names `repolensio.vercel.app`.
+
+`RepoLens-firefox/` is a copy of `RepoLens-extension/` with those changes, so apply fixes to both. `scripts/build-zip.sh` refuses to build if their versions differ.
+
 <br>
 
 ---
