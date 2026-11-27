@@ -1,6 +1,8 @@
 /**
- * RepoLens sidebar — conversation UI with typing effect, per-page history
+ * RepoLens panel — conversation UI with typing effect, per-page history
  * (persisted via chrome.storage.local), streaming progress, and mode toggle.
+ * In Firefox it runs inside the in-page drawer (content/content.js), framed
+ * by the GitHub tab whose id is passed as ?tab=.
  */
 (function () {
   const { MSG, PAGE_TYPES, MODES, STORAGE } = globalThis.REPOLENS;
@@ -32,8 +34,10 @@
   let currentMode = MODES.INSTANT;
   /** @type {boolean} */
   let isAsking = false;
+  /** The GitHub tab this panel is embedded in (from the drawer's ?tab=). */
+  const EMBED_TAB = Number(new URLSearchParams(location.search).get('tab')) || null;
   /** @type {number|null} */
-  let activeTabId = null;
+  let activeTabId = EMBED_TAB;
   /** @type {chrome.runtime.Port|null} */
   let askPort = null;
   /** @type {number|null} */
@@ -142,8 +146,12 @@
   });
 
   // ─── Settings / preferences ──────────────────────────────────────────────────
+  // Framed in the page, the panel only gets runtime, storage and i18n, so the
+  // background opens Settings and lists models on its behalf.
   function openPreferences() {
-    if (chrome.runtime.openOptionsPage) {
+    if (EMBED_TAB) {
+      chrome.runtime.sendMessage({ type: MSG.OPEN_OPTIONS }).catch(() => {});
+    } else if (chrome.runtime.openOptionsPage) {
       chrome.runtime.openOptionsPage();
     } else {
       window.open(chrome.runtime.getURL('options/options.html'), '_blank');
@@ -326,13 +334,20 @@
     for (const p of keyedProviders()) {
       if (modelLists[p.id]) continue;
       modelLists[p.id] = [];
-      globalThis.RepoLensProviders.listModels(p.id, ai.keys[p.id])
+      listModels(p.id, ai.keys[p.id])
         .then((models) => {
           modelLists[p.id] = models;
           if (!aiMenu.classList.contains('is-hidden')) renderAiMenu();
         })
         .catch(() => { delete modelLists[p.id]; });
     }
+  }
+
+  async function listModels(providerId, apiKey) {
+    if (!EMBED_TAB) return globalThis.RepoLensProviders.listModels(providerId, apiKey);
+    const res = await chrome.runtime.sendMessage({ type: MSG.LIST_MODELS, providerId, apiKey });
+    if (!res?.models) throw new Error(res?.error || 'Could not load models');
+    return res.models;
   }
 
   function setAiMenu(open) {
@@ -607,7 +622,7 @@
       retry.type = 'button';
       retry.className = 'retry-btn';
       if (turn.needsSetup) {
-        retry.textContent = 'Open Preferences';
+        retry.textContent = 'Open Settings';
         retry.addEventListener('click', openPreferences);
       } else {
         retry.textContent = 'Retry';
@@ -1053,7 +1068,9 @@
 
   async function loadPageInfo() {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      const [tab] = EMBED_TAB
+        ? [{ id: EMBED_TAB }]
+        : await chrome.tabs.query({ active: true, lastFocusedWindow: true });
       activeTabId = tab?.id ?? null;
       if (!tab?.id) {
         await switchToPage(null);
@@ -1070,8 +1087,9 @@
     }
   }
 
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message?.type === MSG.PAGE_INFO && message.page) {
+  chrome.runtime.onMessage.addListener((message, sender) => {
+    // Only this panel's tab; other GitHub tabs publish their pages too.
+    if (message?.type === MSG.PAGE_INFO && message.page && sender?.tab?.id === activeTabId) {
       switchToPage(message.page);
     }
     if (message?.type === MSG.PREFETCH_DONE && message.signals && currentPage) {
@@ -1091,12 +1109,40 @@
   }
 
   // Reload page + history when switching tabs or navigating within a tab
-  chrome.tabs.onActivated.addListener((info) => {
-    activeTabId = info.tabId;
-    loadPageInfo();
+  // A drawer belongs to one tab; only a free-standing panel follows the active tab.
+  if (!EMBED_TAB) {
+    chrome.tabs.onActivated.addListener((info) => {
+      activeTabId = info.tabId;
+      loadPageInfo();
+    });
+  }
+
+  // ─── Embedded in the drawer: a close button and Esc ask the page to close it
+  if (window.top !== window) {
+    const closeDrawer = () => window.parent.postMessage({ source: 'repolens-panel', type: 'close' }, '*');
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'icon-btn drawer-close';
+    closeBtn.title = 'Close RepoLens';
+    closeBtn.setAttribute('aria-label', 'Close RepoLens');
+    closeBtn.innerHTML = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>';
+    closeBtn.addEventListener('click', closeDrawer);
+    document.querySelector('.header-top')?.appendChild(closeBtn);
+    // Capture phase: decide before the AI menu's own Escape handler hides the menu.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('ai-menu').classList.contains('is-hidden')) closeDrawer();
+    }, true);
+  }
+
+  // In the drawer, the page posts its own navigations into the frame.
+  window.addEventListener('message', (event) => {
+    if (!EMBED_TAB || event.source !== window.parent || event.origin !== 'https://github.com') return;
+    if (event.data?.source === 'repolens-page' && event.data.type === 'page' && event.data.page) {
+      switchToPage(event.data.page);
+    }
   });
 
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (chrome.tabs) chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
     // changeInfo.url is only present for github.com (no "tabs" permission).
     if (tabId === activeTabId && (changeInfo.url || changeInfo.status === 'complete')) {
       loadPageInfo();

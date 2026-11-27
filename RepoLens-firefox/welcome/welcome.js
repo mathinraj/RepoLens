@@ -19,7 +19,7 @@
   $('btn-try').addEventListener('click', () => chrome.tabs.create({ url: SAMPLE_PR_URL }));
 
   chrome.commands.getAll().then((commands) => {
-    const toggle = commands.find((c) => c.name === '_execute_sidebar_action');
+    const toggle = commands.find((c) => c.name === 'toggle-panel');
     if (toggle?.shortcut) $('shortcut').textContent = toggle.shortcut;
   }).catch(() => {});
 

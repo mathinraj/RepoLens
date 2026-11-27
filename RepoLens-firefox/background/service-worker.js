@@ -1,6 +1,6 @@
 /**
  * RepoLens background script (Firefox event page).
- * Routes sidebar open, page context, pre-fetch, and ASK → GitHub API + the
+ * Routes the drawer shortcut, page context, pre-fetch, and ASK → GitHub API + the
  * user's chosen AI provider (Anthropic, OpenAI, or Gemini).
  * Its dependencies are listed before it in manifest.json "background.scripts".
  */
@@ -149,15 +149,17 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changed.some((k) => UNINSTALL_PARAM_KEYS.has(k))) syncUninstallUrl();
 });
 
-// ─── Sidebar ────────────────────────────────────────────────────────────────
+// ─── In-page drawer ─────────────────────────────────────────────────────────
 //
-// Firefox's sidebar belongs to the window, not to a tab, and
-// sidebarAction.open() only works while handling a user action. The popup and
-// the keyboard shortcut (_execute_sidebar_action) open it directly; the
-// on-page lens asks here, and if Firefox refuses, the page explains how to
-// open it instead. The sidebar follows the active tab on its own.
+// Firefox only opens its sidebar from browser UI, so the panel lives in a
+// drawer the content script docks into the GitHub page (content/content.js).
+// The lens and the popup toggle it directly; the keyboard shortcut lands here.
 
-const sidebar = typeof browser !== 'undefined' ? browser.sidebarAction : null;
+chrome.commands.onCommand.addListener(async (command, tab) => {
+  if (command !== 'toggle-panel') return;
+  const target = tab?.id != null ? tab : (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+  if (target?.id != null) chrome.tabs.sendMessage(target.id, { type: MSG.DRAWER_TOGGLE }).catch(() => {});
+});
 
 // ─── Pre-fetch on tab navigation ────────────────────────────────────────────
 
@@ -245,35 +247,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.type === MSG.OPEN_PANEL) {
-    const tabId = sender.tab?.id;
-    if (typeof tabId !== 'number') {
-      sendResponse({ ok: false, error: 'No tab id' });
-      return true;
-    }
-    pageInfoByTab.set(tabId, message.page);
-    // Called synchronously so Firefox can still treat it as the user's click.
-    const opening = sidebar ? sidebar.open() : Promise.reject(new Error('No sidebar API'));
-    opening
-      .then(() => sendResponse({ ok: true }))
-      .catch((err) => sendResponse({ ok: false, error: String(err?.message || err) }));
-    return true;
+  // The drawer's panel needs to know which tab it is embedded in.
+  if (message.type === MSG.GET_TAB_ID) {
+    sendResponse({ tabId: sender.tab?.id ?? null });
+    return false;
   }
 
-  // ─── From the toolbar popup ───────────────────────────────────────────────
-  if (message.type === MSG.PANEL_STATE) {
-    if (!sidebar) {
-      sendResponse({ open: false });
-      return false;
-    }
-    const query = typeof message.windowId === 'number' ? { windowId: message.windowId } : {};
-    sidebar.isOpen(query).then((open) => sendResponse({ open })).catch(() => sendResponse({ open: false }));
-    return true;
-  }
-
-  if (message.type === MSG.PANEL_OPENED) {
+  // Requests from the drawer's panel, which can't call these APIs itself.
+  if (message.type === MSG.OPEN_OPTIONS) {
+    chrome.runtime.openOptionsPage();
     sendResponse({ ok: true });
     return false;
+  }
+
+  if (message.type === MSG.LIST_MODELS) {
+    Providers.listModels(message.providerId, message.apiKey)
+      .then((models) => sendResponse({ models }))
+      .catch((err) => sendResponse({ error: err?.message || String(err) }));
+    return true;
   }
 
   if (message.type === MSG.GET_PAGE_INFO) {

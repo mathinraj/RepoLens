@@ -1,5 +1,5 @@
 /**
- * RepoLens toolbar popup — page status, open/close the sidebar, settings.
+ * RepoLens toolbar popup — page status, open/close the in-page panel, settings.
  */
 (function () {
   const { MSG, STORAGE, PROVIDERS, DEFAULT_PROVIDER, HOST, PAGE_TYPES, RATE, MORE_APPS } = globalThis.REPOLENS;
@@ -82,18 +82,17 @@
     document.getElementById(`${id}-value`).textContent = text;
   }
 
-  // sidebarAction.open()/close() only work while handling a user action, so
-  // they run synchronously in the click handler, before any await.
-  function openPanel() {
-    browser.sidebarAction
-      .open()
+  // The panel is a drawer inside the GitHub page (content/content.js), so the
+  // popup asks that tab's content script to show or hide it.
+  function setDrawer(open) {
+    chrome.tabs
+      .sendMessage(tab.id, { type: MSG.DRAWER_TOGGLE, open })
       .then(() => window.close())
-      .catch((err) => showError(`Couldn't open the sidebar: ${err.message}`));
+      .catch(() => showError('Reload this GitHub tab, then try again. RepoLens can\'t reach tabs opened before it was installed.'));
   }
 
-  function closePanel() {
-    browser.sidebarAction.close().finally(() => window.close());
-  }
+  const openPanel = () => setDrawer(true);
+  const closePanel = () => setDrawer(false);
 
   // Firefox may install without the site access listed in the manifest; the
   // lens and answers need it, so offer to grant it here.
@@ -139,11 +138,11 @@
     labelEl.textContent = known ? page.label : 'GitHub';
     labelEl.title = known ? page.label : '';
     if (!known) hintEl.textContent = 'Open a repo, pull request, file, or commit for page-aware questions.';
-    else if (panelOpen) hintEl.textContent = 'The RepoLens sidebar is open in this window.';
-    else hintEl.textContent = 'Ready — open the sidebar to ask about this page.';
+    else if (panelOpen) hintEl.textContent = 'The RepoLens panel is open on this tab.';
+    else hintEl.textContent = 'Ready — open the panel to ask about this page.';
 
-    if (panelOpen) setPrimary('Close RepoLens sidebar', closePanel, { secondary: true });
-    else setPrimary('Open RepoLens sidebar', openPanel);
+    if (panelOpen) setPrimary('Close RepoLens panel', closePanel, { secondary: true });
+    else setPrimary('Open RepoLens panel', openPanel);
   }
 
   async function renderSetup() {
@@ -273,7 +272,7 @@
   async function renderShortcut() {
     try {
       const commands = await chrome.commands.getAll();
-      const toggle = commands.find((c) => c.name === '_execute_sidebar_action');
+      const toggle = commands.find((c) => c.name === 'toggle-panel');
       shortcutEl.textContent = toggle?.shortcut ? `Shortcut: ${toggle.shortcut}` : '';
     } catch {
       shortcutEl.textContent = '';
@@ -282,8 +281,9 @@
 
   (async function init() {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.windowId != null) {
-      panelOpen = await browser.sidebarAction.isOpen({ windowId: tab.windowId }).catch(() => false);
+    if (tab?.id != null) {
+      const state = await chrome.tabs.sendMessage(tab.id, { type: MSG.DRAWER_STATE }).catch(() => null);
+      panelOpen = Boolean(state?.open);
     }
     renderPermissions();
     renderPage();

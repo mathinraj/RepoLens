@@ -104,6 +104,10 @@
   }
 
   function publishPageInfo(page) {
+    const frame = document.querySelector('#repolens-drawer iframe');
+    if (frame?.contentWindow) {
+      frame.contentWindow.postMessage({ source: 'repolens-page', type: 'page', page }, new URL(chrome.runtime.getURL('/')).origin);
+    }
     try {
       chrome.runtime.sendMessage({
         type: MSG.PAGE_INFO,
@@ -162,31 +166,68 @@
     event.stopPropagation();
 
     if (!isContextValid()) return;
-    const page = currentPage || getPageInfo();
-    try {
-      chrome.runtime
-        .sendMessage({ type: MSG.OPEN_PANEL, page })
-        .then((res) => { if (!res?.ok) showOpenHint(); })
-        .catch(() => showOpenHint());
-    } catch {
-      contextInvalid = true;
-    }
+    toggleDrawer(true);
   }
 
-  // Firefox only opens a sidebar from its own UI or a shortcut, so when the
-  // lens can't open it, say how.
-  function showOpenHint() {
-    const tooltip = document.querySelector(`#${ROOT_ID} .repolens-tooltip`);
-    if (!tooltip) return;
-    const mac = /Mac/i.test(navigator.platform);
-    tooltip.textContent = `Press ${mac ? '⌘⇧L' : 'Ctrl+Shift+L'} or use the RepoLens toolbar icon to open the sidebar`;
-    tooltip.classList.add('is-visible', 'is-hint');
-    window.clearTimeout(showOpenHint._timer);
-    showOpenHint._timer = window.setTimeout(() => {
-      tooltip.classList.remove('is-visible', 'is-hint');
-      if (currentPage) tooltip.textContent = `RepoLens · ${formatPageBadge(currentPage)}`;
-    }, 5000);
+  // ─── In-page drawer ──────────────────────────────────────────────────────
+  // Firefox only opens its sidebar from browser UI, so RepoLens docks its panel
+  // inside the GitHub page instead. The frame is the extension's own panel
+  // page, so it keeps full extension access. It stays loaded while hidden, so
+  // a conversation survives closing and reopening.
+  const DRAWER_ID = 'repolens-drawer';
+  const DRAWER_KEY = 'repolens-drawer-open';
+  const panelOrigin = new URL(chrome.runtime.getURL('/')).origin;
+  let drawer = null;
+  let tabIdPromise = null;
+
+  function getTabId() {
+    tabIdPromise ||= chrome.runtime
+      .sendMessage({ type: MSG.GET_TAB_ID })
+      .then((res) => res?.tabId ?? null)
+      .catch(() => null);
+    return tabIdPromise;
   }
+
+  function isDrawerOpen() {
+    return Boolean(drawer?.classList.contains('is-open'));
+  }
+
+  function setDrawerOpen(open) {
+    drawer?.classList.toggle('is-open', open);
+    document.documentElement.classList.toggle('repolens-drawer-open', open);
+    try {
+      if (open) sessionStorage.setItem(DRAWER_KEY, '1');
+      else sessionStorage.removeItem(DRAWER_KEY);
+    } catch {
+      // storage blocked; the drawer just won't reopen after a reload
+    }
+    if (open) drawer?.querySelector('iframe')?.focus();
+  }
+
+  async function toggleDrawer(open = !isDrawerOpen()) {
+    if (!isContextValid()) return false;
+    if (open && !drawer) {
+      const tabId = await getTabId();
+      drawer = document.createElement('div');
+      drawer.id = DRAWER_ID;
+      const frame = document.createElement('iframe');
+      frame.title = 'RepoLens';
+      frame.allow = 'clipboard-write';
+      frame.src = chrome.runtime.getURL(`sidepanel/panel.html${tabId ? `?tab=${tabId}` : ''}`);
+      drawer.appendChild(frame);
+      document.documentElement.appendChild(drawer);
+      // Let the closed state paint first so the drawer slides in.
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    }
+    setDrawerOpen(open);
+    return isDrawerOpen();
+  }
+
+  window.addEventListener('message', (event) => {
+    const frame = drawer?.querySelector('iframe');
+    if (!frame || event.source !== frame.contentWindow || event.origin !== panelOrigin) return;
+    if (event.data?.source === 'repolens-panel' && event.data.type === 'close') setDrawerOpen(false);
+  });
 
   /**
    * Lightweight DOM scrape for Instant-mode fallback / supplement.
@@ -267,6 +308,15 @@
       sendResponse({ scrape: scrapePage() });
       return true;
     }
+    if (message && message.type === MSG.DRAWER_TOGGLE) {
+      toggleDrawer(typeof message.open === 'boolean' ? message.open : undefined)
+        .then((open) => sendResponse({ open }));
+      return true;
+    }
+    if (message && message.type === MSG.DRAWER_STATE) {
+      sendResponse({ open: isDrawerOpen() });
+      return true;
+    }
     return false;
   });
 
@@ -310,5 +360,11 @@
     .finally(() => {
       lensLoaded = true;
       refresh(true);
+      // Reopen after a reload if the drawer was open in this tab.
+      try {
+        if (sessionStorage.getItem(DRAWER_KEY) === '1') toggleDrawer(true);
+      } catch {
+        // storage blocked
+      }
     });
 })();

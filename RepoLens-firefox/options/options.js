@@ -67,10 +67,10 @@
     if (withKeys.length >= 2) {
       const names = withKeys.map((p) => p.short);
       title.textContent = `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} are ready to use together`;
-      text.textContent = 'In the sidebar, switch the AI for any question, or ask them all at once and compare their answers. The card selected here is the default.';
+      text.textContent = 'In the side panel, switch the AI for any question, or ask them all at once and compare their answers. The card selected here is the default.';
     } else {
       title.textContent = 'Add more than one key to use them together';
-      text.textContent = 'Every key you add stays saved. In the sidebar you can then switch the AI for any question, or ask several at once and compare their answers. The card selected here is the default.';
+      text.textContent = 'Every key you add stays saved. In the side panel you can then switch the AI for any question, or ask several at once and compare their answers. The card selected here is the default.';
     }
   }
 

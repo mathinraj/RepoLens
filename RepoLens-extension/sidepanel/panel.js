@@ -626,7 +626,7 @@
       retry.type = 'button';
       retry.className = 'retry-btn';
       if (turn.needsSetup) {
-        retry.textContent = 'Open Preferences';
+        retry.textContent = 'Open Settings';
         retry.addEventListener('click', openPreferences);
       } else {
         retry.textContent = 'Retry';
@@ -1089,8 +1089,9 @@
     }
   }
 
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message?.type === MSG.PAGE_INFO && message.page) {
+  chrome.runtime.onMessage.addListener((message, sender) => {
+    // Only the active tab; other GitHub tabs publish their pages too.
+    if (message?.type === MSG.PAGE_INFO && message.page && sender?.tab?.id === activeTabId) {
       switchToPage(message.page);
     }
     if (message?.type === MSG.PREFETCH_DONE && message.signals && currentPage) {

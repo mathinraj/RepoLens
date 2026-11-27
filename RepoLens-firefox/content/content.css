@@ -44,11 +44,6 @@
   text-overflow: ellipsis;
 }
 
-.repolens-tooltip.is-hint {
-  max-width: 300px;
-  white-space: normal;
-}
-
 .repolens-fab-wrap:hover .repolens-tooltip,
 .repolens-fab-wrap:focus-within .repolens-tooltip,
 .repolens-tooltip.is-visible {
@@ -154,4 +149,47 @@ html[data-color-mode="dark"] .repolens-fab,
 [data-color-mode="dark"] .repolens-fab {
   background: linear-gradient(145deg, #1a2840 0%, #101827 100%);
   border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* In-page drawer (Firefox): the RepoLens panel docked to the right edge */
+#repolens-drawer {
+  all: initial;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  z-index: 2147483647;
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.2);
+  border-left: 1px solid rgba(127, 127, 127, 0.28);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.24s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0.24s;
+}
+
+#repolens-drawer.is-open {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.24s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s;
+}
+
+#repolens-drawer iframe {
+  all: initial;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  color-scheme: normal;
+}
+
+/* The lens would sit under the drawer, so it steps aside while it's open */
+html.repolens-drawer-open #repolens-root { display: none !important; }
+
+/* Wide screens: make room instead of covering the page */
+@media (min-width: 1180px) {
+  html.repolens-drawer-open body { margin-right: 440px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #repolens-drawer, #repolens-drawer.is-open { transition: none; }
 }

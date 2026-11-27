@@ -144,6 +144,13 @@ const REPOLENS = {
     ASK_ERROR: 'REPOLENS_ASK_ERROR',
     /** Sent once every provider in an ask has answered or failed */
     ASK_FINISHED: 'REPOLENS_ASK_FINISHED',
+    /** Firefox in-page drawer: content script ↔ popup / background */
+    DRAWER_TOGGLE: 'REPOLENS_DRAWER_TOGGLE',
+    DRAWER_STATE: 'REPOLENS_DRAWER_STATE',
+    GET_TAB_ID: 'REPOLENS_GET_TAB_ID',
+    /** From the drawer's panel, which can't reach tabs or the options page itself */
+    OPEN_OPTIONS: 'REPOLENS_OPEN_OPTIONS',
+    LIST_MODELS: 'REPOLENS_LIST_MODELS',
     SCRAPE_PAGE: 'REPOLENS_SCRAPE_PAGE',
     PREFETCH_DONE: 'REPOLENS_PREFETCH_DONE',
     PANEL_HELLO: 'REPOLENS_PANEL_HELLO',
